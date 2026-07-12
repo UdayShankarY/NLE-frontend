@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Menu, Crown } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import type { AdminView, AuthUser } from '../types';
 import { Sidebar, DashboardView, CategoriesView, ProductsView, SlidersView, UsersView, TermsView } from './admin';
 
@@ -9,18 +10,48 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
-  const [view, setView] = useState<AdminView>(() => {
-    const savedView = localStorage.getItem('adminView');
-    return (savedView as AdminView) || 'dashboard';
-  });
+  const location = useLocation();
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  const view = React.useMemo<AdminView>(() => {
+    const path = location.pathname.replace(/^\/admin\/?/, '').split('/')[0] || 'dashboard';
+    switch (path) {
+      case 'categories':
+        return 'categories';
+      case 'products':
+        return 'products';
+      case 'sliders':
+        return 'sliders';
+      case 'orders':
+        return 'orders';
+      case 'users':
+        return 'users';
+      case 'terms':
+        return 'terms';
+      default:
+        return 'dashboard';
+    }
+  }, [location.pathname]);
+
+  const navigateToView = (nextView: AdminView) => {
+    const routes: Record<AdminView, string> = {
+      dashboard: '/admin',
+      categories: '/admin/categories',
+      products: '/admin/products',
+      sliders: '/admin/sliders',
+      orders: '/admin/orders',
+      users: '/admin/users',
+      terms: '/admin/terms',
+    };
+    navigate(routes[nextView]);
+  };
+
   useEffect(() => {
-    localStorage.setItem('adminView', view);
     if (window.innerWidth < 768) {
       setSidebarOpen(false);
     }
-  }, [view]);
+  }, [location.pathname]);
 
   if (user.role !== 'admin') {
     return (
@@ -34,7 +65,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <div className={`fixed inset-y-0 left-0 z-[200] transition-transform duration-200 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Sidebar currentView={view} onViewChange={setView} user={user} onLogout={onLogout} />
+        <Sidebar currentView={view} onViewChange={navigateToView} user={user} onLogout={onLogout} />
       </div>
       {sidebarOpen && (
         <div

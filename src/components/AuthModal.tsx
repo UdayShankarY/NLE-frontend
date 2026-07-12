@@ -1,12 +1,10 @@
 import { auth } from "../firebase";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Mail, Lock, User, Phone, Eye, EyeOff, Gift, Zap, PartyPopper, Mailbox } from 'lucide-react';
 import type { AuthTab, AuthUser } from '../types';
 import { cn } from '../lib/utils';
-
-const API_URL = import.meta.env.VITE_API_URL;
-
+import { getApiUrl } from '../lib/api';
 function getGoogleAuthErrorMessage(error: unknown): string {
   const code = typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code?: string }).code)
@@ -161,25 +159,7 @@ const LoginForm: React.FC<{
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-
-      const res = await fetch(`${API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          firstName: firebaseUser.displayName?.split(' ')[0] || '',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          photoURL: firebaseUser.photoURL || ''
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) { console.error('Google auth failed:', data.msg); return; }
-
-      localStorage.setItem('token', data.token);
-      onSuccess({ id: data.user.id, firstName: data.user.firstName, lastName: data.user.lastName, email: data.user.email, role: data.user.role });
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -199,7 +179,7 @@ const LoginForm: React.FC<{
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/login`, {
+      const res = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
@@ -288,25 +268,7 @@ const RegisterForm: React.FC<{
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-
-      const res = await fetch(`${API_URL}/api/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          firstName: firebaseUser.displayName?.split(' ')[0] || '',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          photoURL: firebaseUser.photoURL || ''
-        })
-      });
-      const data = await res.json();
-      if (!res.ok) { console.error('Google auth failed:', data.msg); return; }
-
-      localStorage.setItem('token', data.token);
-      onSuccess({ id: data.user.id, firstName: data.user.firstName, lastName: data.user.lastName, email: data.user.email, role: data.user.role });
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -332,7 +294,7 @@ const RegisterForm: React.FC<{
 
     setLoading(true);
     try {
-      const res = await fetch(`${API_URL}/api/auth/register`, {
+      const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName: first, lastName: last, email, password: pass })
@@ -346,7 +308,7 @@ const RegisterForm: React.FC<{
         return;
       }
       // After successful registration, auto-login
-      const loginRes = await fetch(`${API_URL}/api/auth/login`, {
+      const loginRes = await fetch(getApiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })

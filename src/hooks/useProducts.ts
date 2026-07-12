@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AdminProduct, AdminCategory } from '../types';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { getApiUrl } from '../lib/api';
 
 interface GroupedProducts {
   [categoryName: string]: AdminProduct[];
@@ -14,8 +13,8 @@ export function useProducts() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`${API_URL}/api/products`).then(r => r.json()),
-      fetch(`${API_URL}/api/categories`).then(r => r.json()),
+      fetch(getApiUrl('/api/products')).then(r => r.json()),
+      fetch(getApiUrl('/api/categories')).then(r => r.json()),
     ])
       .then(([products, cats]: [AdminProduct[], AdminCategory[]]) => {
         const active = products.filter(p => p.active);

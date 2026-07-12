@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react';
 import type { AdminProduct, BookingDetails } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
+import { getApiUrl } from '../lib/api';
 
 interface BookingPageProps {
   product: AdminProduct;
@@ -82,7 +83,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   setError('');
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/payment/create-order`, {
+    const response = await fetch(getApiUrl('/api/payment/create-order'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: product.price }),

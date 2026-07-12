@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { HERO_SLIDES } from '../data';
 import type { HeroSlide } from '../types';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { getApiUrl } from '../lib/api';
 
 export function useHeroSlider() {
   const [index, setIndex] = useState(0);
@@ -12,7 +11,7 @@ export function useHeroSlider() {
   useEffect(() => {
     const fetchSliders = async () => {
       try {
-        const res = await fetch(`${API_URL}/api/sliders`);
+        const res = await fetch(getApiUrl('/api/sliders'));
         const data = await res.json();
         const apiSliders = data
           .filter((s: any) => s.active)

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Crown, User as UserIcon } from 'lucide-react';
 import { LoadingState, EmptyState } from '../EmptyState';
 import { cn } from '../../lib/utils';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { getApiUrl } from '../../lib/api';
 
 interface User {
   _id: string;
@@ -20,7 +19,7 @@ export const UsersView = () => {
   const [filter, setFilter] = useState<'all' | 'user' | 'admin'>('all');
 
   useEffect(() => {
-    fetch(`${API_URL}/api/dashboard/users`)
+    fetch(getApiUrl('/api/dashboard/users'))
       .then(r => r.json())
       .then(d => { setUsers(d); setLoading(false); })
       .catch(() => setLoading(false));
