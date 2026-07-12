@@ -1,0 +1,9 @@
+export { DashboardView } from './DashboardView';
+export { CategoriesView } from './CategoriesView';
+export { ProductsView } from './ProductsView';
+export { SlidersView } from './SlidersView';
+export { UsersView } from './UsersView';
+export { TermsView } from './TermsView';
+export { Modal } from './Modal';
+export { ConfirmModal } from './ConfirmModal';
+export { Sidebar } from './Sidebar';

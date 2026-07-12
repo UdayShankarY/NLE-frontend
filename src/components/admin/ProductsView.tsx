@@ -1,0 +1,836 @@
+import { useState, useEffect } from "react";
+import type { AdminProduct, AdminCategory } from "../../types";
+import { Modal } from "./Modal";
+import { ConfirmModal } from "./ConfirmModal";
+import { toast } from "react-toastify";
+import { Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Star, Lightbulb } from "lucide-react";
+import { cn } from "../../lib/utils";
+
+const API = '/api/products';
+const CAT_API = '/api/categories';
+
+export const ProductsView = () => {
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<AdminProduct | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [imageMode, setImageMode] = useState<"url" | "upload">("upload");
+  const [uploading, setUploading] = useState(false);
+  const [moreImagesMode, setMoreImagesMode] = useState<"url" | "upload">("upload");
+  const [moreUploading, setMoreUploading] = useState(false);
+
+  const [form, setForm] = useState({
+    name: "",
+    categoryId: "",
+    categoryName: "",
+    subcategory: "",
+    price: 0,
+    originalPrice: 0,
+    description: "",
+    inclusions: [] as string[],
+    addOns: [] as { name: string; price: number }[],
+    image: "",
+    moreImages: [] as string[],
+    badge: "",
+    badgeColor: "purple" as "purple" | "pink" | "gold" | "green",
+    active: true,
+    featured: false,
+  });
+
+  const [newInclusion, setNewInclusion] = useState("");
+  const [newAddOn, setNewAddOn] = useState({ name: "", price: 0 });
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(API);
+      const data = await res.json();
+      setProducts(data);
+    } catch (err) {
+      toast.error("Failed to load products");
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(CAT_API);
+      const data = await res.json();
+      setCategories(data);
+    } catch (err) {
+      toast.error("Failed to load categories");
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCategories();
+  }, []);
+
+  const getSubcategories = (): string[] => {
+    const cat = categories.find((c) => c._id === form.categoryId);
+    if (!cat?.subcategories) return [];
+
+    return cat.subcategories.map((sub) =>
+      typeof sub === "string" ? sub : sub.name
+    );
+  };
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm({
+      name: "",
+      categoryId: "",
+      categoryName: "",
+      subcategory: "",
+      price: 0,
+      originalPrice: 0,
+      description: "",
+      inclusions: [],
+      addOns: [],
+      image: "",
+      moreImages: [],
+      badge: "",
+      badgeColor: "purple",
+      active: true,
+      featured: false,
+    });
+    setImageMode("upload");
+    setShowModal(true);
+  };
+
+  const openEdit = (p: AdminProduct) => {
+    setEditing(p);
+    setForm({
+      name: p.name,
+      categoryId: p.categoryId,
+      categoryName: p.categoryName,
+      subcategory: p.subcategory,
+      price: p.price,
+      originalPrice: p.originalPrice || 0,
+      description: p.description,
+      inclusions: p.inclusions || [],
+      addOns: p.addOns || [],
+      image: p.image,
+      moreImages: p.moreImages || [],
+      badge: p.badge || "",
+      badgeColor: p.badgeColor,
+      active: p.active,
+      featured: p.featured,
+    });
+    setImageMode("upload");
+    setShowModal(true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "ems_categories");
+    formData.append("folder", "ems/products");
+
+    try {
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/duwkslkdt/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      setForm((f) => ({ ...f, image: data.secure_url }));
+      toast.success("Image uploaded successfully!");
+    } catch (error) {
+      toast.error("Failed to upload image. Please try again.");
+      console.error("Upload error:", error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleMoreImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size should be less than 5MB");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+
+    setMoreUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "ems_categories");
+    formData.append("folder", "ems/products");
+
+    try {
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/duwkslkdt/image/upload",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const data = await response.json();
+      setForm((f) => ({ ...f, moreImages: [...f.moreImages, data.secure_url] }));
+      toast.success("Image added!");
+    } catch (error) {
+      toast.error("Failed to upload image. Please try again.");
+      console.error("Upload error:", error);
+    } finally {
+      setMoreUploading(false);
+    }
+  };
+
+  const save = async () => {
+    if (!form.name.trim()) {
+      toast.error("Product name is required");
+      return;
+    }
+
+    if (!form.categoryId) {
+      toast.error("Please select a category");
+      return;
+    }
+
+    if (!form.image.trim()) {
+      toast.error("Product image is required");
+      return;
+    }
+
+    if (form.price <= 0) {
+      toast.error("Price must be greater than 0");
+      return;
+    }
+
+    const selectedCat = categories.find((c) => c._id === form.categoryId);
+    const payload = {
+      ...form,
+      categoryName: selectedCat?.name || "",
+    };
+
+    if (editing) {
+      try {
+        const res = await fetch(`${API}/${editing._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const updated = await res.json();
+        setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+        toast.success("Product updated successfully!");
+      } catch {
+        toast.error("Failed to update product");
+      }
+    } else {
+      const res = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const newProduct = await res.json();
+      setProducts((prev) => [newProduct, ...prev]);
+      toast.success("Product added successfully!");
+    }
+
+    setShowModal(false);
+  };
+
+  const del = async (id: string) => {
+    await fetch(`${API}/${id}`, { method: "DELETE" });
+    setProducts((prev) => prev.filter((p) => p._id !== id));
+    setDeleteConfirm(null);
+    toast.success("Product deleted!");
+  };
+
+  const toggle = async (id: string, active: boolean) => {
+    await fetch(`${API}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active }),
+    });
+    setProducts((prev) => prev.map((p) => (p._id === id ? { ...p, active } : p)));
+  };
+
+  const addInclusion = () => {
+    if (!newInclusion.trim()) return;
+    setForm((f) => ({ ...f, inclusions: [...f.inclusions, newInclusion.trim()] }));
+    setNewInclusion("");
+  };
+
+  const removeInclusion = (idx: number) => {
+    setForm((f) => ({ ...f, inclusions: f.inclusions.filter((_, i) => i !== idx) }));
+  };
+
+  const addAddOn = () => {
+    if (!newAddOn.name.trim() || newAddOn.price <= 0) {
+      toast.error("Add-on name and price are required");
+      return;
+    }
+    setForm((f) => ({ ...f, addOns: [...f.addOns, { ...newAddOn }] }));
+    setNewAddOn({ name: "", price: 0 });
+  };
+
+  const removeAddOn = (idx: number) => {
+    setForm((f) => ({ ...f, addOns: f.addOns.filter((_, i) => i !== idx) }));
+  };
+
+  const removeMoreImage = (idx: number) => {
+    setForm((f) => ({ ...f, moreImages: f.moreImages.filter((_, i) => i !== idx) }));
+  };
+
+  const addNewCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+
+    try {
+      const res = await fetch(CAT_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newCategoryName.trim(),
+          icon: "📦",
+          image: "",
+          slug: newCategoryName.toLowerCase().replace(/\s+/g, "-"),
+          active: true,
+        }),
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        toast.error(error.message || "Failed to add category");
+        return;
+      }
+
+      const newCategory = await res.json();
+      setCategories((prev) => [...prev, newCategory]);
+      setForm((f) => ({ ...f, categoryId: newCategory._id, subcategory: "" }));
+      setNewCategoryName("");
+      setShowAddCategoryModal(false);
+      toast.success("Category added successfully!");
+    } catch (err) {
+      toast.error("Failed to add category");
+    }
+  };
+
+  const badgeColorClass: Record<string, string> = {
+    purple: 'bg-brand-purple text-white',
+    pink: 'bg-brand-pink text-white',
+    gold: 'bg-brand-gold text-white',
+    green: 'bg-emerald-500 text-white',
+  };
+
+  return (
+    <div className="adm-section">
+      <div className="adm-section-header">
+        <h2 className="adm-section-title">Products</h2>
+        <button className="adm-btn-primary" onClick={openAdd}>
+          + Add Product
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {products.map((prod) => (
+          <div key={prod._id} className={cn('overflow-hidden rounded-card border border-border bg-white shadow-card', !prod.active && 'opacity-60')}>
+            <div className="relative h-40 w-full bg-gray-100">
+              <img src={prod.image} alt={prod.name} className="h-full w-full object-cover" />
+              {prod.badge && (
+                <span className={cn('absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold', badgeColorClass[prod.badgeColor] || badgeColorClass.purple)}>
+                  {prod.badge}
+                </span>
+              )}
+              {prod.featured && (
+                <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-amber-500">
+                  <Star size={14} fill="currentColor" />
+                </span>
+              )}
+            </div>
+            <div className="p-4">
+              <h3 className="truncate text-sm font-semibold text-ink">{prod.name}</h3>
+              <p className="mt-0.5 text-xs text-ink-muted">
+                {prod.categoryName} {prod.subcategory && `\u00b7 ${prod.subcategory}`}
+              </p>
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-base font-bold text-ink">&#8377;{prod.price}</span>
+                {(prod.originalPrice ?? 0) > 0 && (
+                  <span className="text-xs text-ink-muted line-through">&#8377;{prod.originalPrice}</span>
+                )}
+              </div>
+              <div className="mt-3 flex gap-1.5">
+                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(prod)}>
+                  <Pencil size={12} /> Edit
+                </button>
+                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(prod._id, !prod.active)}>
+                  {prod.active ? <EyeOff size={12} /> : <Eye size={12} />}
+                </button>
+                <button
+                  className="flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                  onClick={() => setDeleteConfirm({ id: prod._id, name: prod.name })}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {showModal && (
+        <Modal
+          title={editing ? "Edit Product" : "Add Product"}
+          onClose={() => setShowModal(false)}
+          large
+        >
+          <div className="adm-form">
+            <div className="adm-form-row">
+              <div className="adm-form-col">
+                <label>Product Name *</label>
+                <input
+                  className="adm-input"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="e.g. Romantic Candlelight Dinner"
+                />
+              </div>
+            </div>
+
+            <div className="adm-form-row">
+              <div className="adm-form-col">
+                <label>Category *</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                  <select
+                    className="adm-input"
+                    style={{ flex: 1 }}
+                    value={form.categoryId}
+                    onChange={(e) => {
+                      const catId = e.target.value;
+                      setForm((f) => ({ ...f, categoryId: catId, subcategory: "" }));
+                    }}
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="adm-btn-add"
+                    onClick={() => setShowAddCategoryModal(true)}
+                    title="Add new category"
+                  >
+                    + New
+                  </button>
+                </div>
+              </div>
+
+              <div className="adm-form-col">
+                <label>Subcategory</label>
+                <select
+                  className="adm-input"
+                  value={form.subcategory}
+                  onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}
+                  disabled={!form.categoryId}
+                >
+                  <option value="">Select Subcategory</option>
+                  {getSubcategories().map((sub) => (
+                    <option key={sub} value={sub}>
+                      {sub}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="adm-form-row">
+              <div className="adm-form-col">
+                <label>Price (&#8377;) *</label>
+                <input
+                  type="number"
+                  className="adm-input"
+                  value={form.price}
+                  onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))}
+                  min="0"
+                />
+              </div>
+
+              <div className="adm-form-col">
+                <label>Original Price (&#8377;)</label>
+                <input
+                  type="number"
+                  className="adm-input"
+                  value={form.originalPrice}
+                  onChange={(e) => setForm((f) => ({ ...f, originalPrice: Number(e.target.value) }))}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <label>Description</label>
+            <textarea
+              className="adm-input adm-textarea"
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              rows={4}
+              placeholder="Describe your product..."
+            />
+
+            <label>Main Image *</label>
+            <div className="adm-image-mode-tabs">
+              <button
+                type="button"
+                className={`adm-mode-tab${imageMode === "upload" ? " active" : ""}`}
+                onClick={() => setImageMode("upload")}
+              >
+                <Upload size={13} className="mr-1 inline" /> Upload File
+              </button>
+              <button
+                type="button"
+                className={`adm-mode-tab${imageMode === "url" ? " active" : ""}`}
+                onClick={() => setImageMode("url")}
+              >
+                <LinkIcon size={13} className="mr-1 inline" /> Image URL
+              </button>
+            </div>
+
+            {imageMode === "upload" ? (
+              <div className="adm-file-upload">
+                <input
+                  type="file"
+                  id="product-image-upload"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="adm-file-input"
+                  disabled={uploading}
+                />
+                <label htmlFor="product-image-upload" className="adm-file-label">
+                  {uploading ? (
+                    <>
+                      <span className="adm-file-icon">&#8987;</span>
+                      <span className="adm-file-text">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="adm-file-icon"><Upload size={20} /></span>
+                      <span className="adm-file-text">
+                        {form.image ? "Change Image" : "Choose Image"}
+                      </span>
+                      <span className="adm-file-hint">Max 5MB (JPG, PNG, WebP)</span>
+                    </>
+                  )}
+                </label>
+              </div>
+            ) : (
+              <input
+                className="adm-input"
+                value={form.image}
+                onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
+                placeholder="https://example.com/image.jpg"
+              />
+            )}
+
+            {form.image && !uploading && (
+              <div className="adm-image-preview">
+                <img src={form.image} alt="Preview" />
+                <button
+                  type="button"
+                  className="adm-remove-image"
+                  onClick={() => setForm((f) => ({ ...f, image: "" }))}
+                  title="Remove image"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
+            <label>More Images</label>
+            <div className="adm-image-mode-tabs">
+              <button
+                type="button"
+                className={`adm-mode-tab${moreImagesMode === "upload" ? " active" : ""}`}
+                onClick={() => setMoreImagesMode("upload")}
+              >
+                <Upload size={13} className="mr-1 inline" /> Upload File
+              </button>
+              <button
+                type="button"
+                className={`adm-mode-tab${moreImagesMode === "url" ? " active" : ""}`}
+                onClick={() => setMoreImagesMode("url")}
+              >
+                <LinkIcon size={13} className="mr-1 inline" /> Image URL
+              </button>
+            </div>
+
+            {moreImagesMode === "upload" ? (
+              <div className="adm-file-upload">
+                <input
+                  type="file"
+                  id="more-images-upload"
+                  accept="image/*"
+                  onChange={handleMoreImagesUpload}
+                  className="adm-file-input"
+                  disabled={moreUploading}
+                />
+                <label htmlFor="more-images-upload" className="adm-file-label">
+                  {moreUploading ? (
+                    <>
+                      <span className="adm-file-icon">&#8987;</span>
+                      <span className="adm-file-text">Uploading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="adm-file-icon"><Upload size={20} /></span>
+                      <span className="adm-file-text">Add More Images</span>
+                      <span className="adm-file-hint">Max 5MB per image</span>
+                    </>
+                  )}
+                </label>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  className="adm-input"
+                  placeholder="https://example.com/image.jpg"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && e.currentTarget.value.trim()) {
+                      setForm((f) => ({
+                        ...f,
+                        moreImages: [...f.moreImages, e.currentTarget.value.trim()],
+                      }));
+                      e.currentTarget.value = "";
+                    }
+                  }}
+                />
+              </div>
+            )}
+
+            {form.moreImages.length > 0 && (
+              <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6">
+                {form.moreImages.map((img, idx) => (
+                  <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
+                    <img src={img} alt={`More ${idx + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={() => removeMoreImage(idx)}
+                      title="Remove"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <label>Inclusions</label>
+            <div className="flex gap-2">
+              <input
+                className="adm-input"
+                value={newInclusion}
+                onChange={(e) => setNewInclusion(e.target.value)}
+                placeholder="e.g. Cake, Balloons, Decorations"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addInclusion();
+                  }
+                }}
+              />
+              <button type="button" className="adm-btn-add" onClick={addInclusion}>
+                + Add
+              </button>
+            </div>
+            {form.inclusions.length > 0 && (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {form.inclusions.map((inc, idx) => (
+                  <li key={idx} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-ink">
+                    {inc}
+                    <button type="button" className="text-ink-muted hover:text-red-500" onClick={() => removeInclusion(idx)}>
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <label>Add-Ons</label>
+            <div className="flex gap-2">
+              <input
+                className="adm-input"
+                value={newAddOn.name}
+                onChange={(e) => setNewAddOn((a) => ({ ...a, name: e.target.value }))}
+                placeholder="Add-on name"
+              />
+              <input
+                type="number"
+                className="adm-input"
+                style={{ maxWidth: 100 }}
+                value={newAddOn.price}
+                onChange={(e) => setNewAddOn((a) => ({ ...a, price: Number(e.target.value) }))}
+                placeholder="Price"
+                min="0"
+              />
+              <button type="button" className="adm-btn-add" onClick={addAddOn}>
+                + Add
+              </button>
+            </div>
+            {form.addOns.length > 0 && (
+              <ul className="mt-2 flex flex-col gap-1.5">
+                {form.addOns.map((addon, idx) => (
+                  <li key={idx} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-ink">
+                    {addon.name} - &#8377;{addon.price}
+                    <button type="button" className="text-ink-muted hover:text-red-500" onClick={() => removeAddOn(idx)}>
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div className="adm-form-row">
+              <div className="adm-form-col">
+                <label>Badge Text</label>
+                <input
+                  className="adm-input"
+                  value={form.badge}
+                  onChange={(e) => setForm((f) => ({ ...f, badge: e.target.value }))}
+                  placeholder="e.g. BESTSELLER"
+                />
+              </div>
+
+              <div className="adm-form-col">
+                <label>Badge Color</label>
+                <select
+                  className="adm-input"
+                  value={form.badgeColor}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      badgeColor: e.target.value as "purple" | "pink" | "gold" | "green",
+                    }))
+                  }
+                >
+                  <option value="purple">Purple</option>
+                  <option value="pink">Pink</option>
+                  <option value="gold">Gold</option>
+                  <option value="green">Green</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <label className="adm-check-row">
+                <input
+                  type="checkbox"
+                  checked={form.active}
+                  onChange={(e) => setForm((f) => ({ ...f, active: e.target.checked }))}
+                />
+                Active
+              </label>
+              <label className="adm-check-row">
+                <input
+                  type="checkbox"
+                  checked={form.featured}
+                  onChange={(e) => setForm((f) => ({ ...f, featured: e.target.checked }))}
+                />
+                Featured
+              </label>
+            </div>
+
+            <div className="adm-modal-footer">
+              <button className="adm-btn-ghost" onClick={() => setShowModal(false)}>
+                Cancel
+              </button>
+              <button className="adm-btn-primary" onClick={save} disabled={uploading || moreUploading}>
+                {editing ? "Save Changes" : "Add Product"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {deleteConfirm && (
+        <ConfirmModal
+          title="Delete Product"
+          message={`Are you sure you want to delete "${deleteConfirm.name}"? This action cannot be undone.`}
+          onConfirm={() => del(deleteConfirm.id)}
+          onCancel={() => setDeleteConfirm(null)}
+          confirmText="Delete"
+        />
+      )}
+
+      {showAddCategoryModal && (
+        <Modal
+          title="Add New Category"
+          onClose={() => {
+            setShowAddCategoryModal(false);
+            setNewCategoryName("");
+          }}
+        >
+          <div className="adm-form">
+            <label>Category Name *</label>
+            <input
+              className="adm-input"
+              value={newCategoryName}
+              onChange={(e) => setNewCategoryName(e.target.value)}
+              placeholder="e.g. Birthday Decorations"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addNewCategory();
+                }
+              }}
+            />
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
+              <Lightbulb size={13} className="mt-0.5 flex-shrink-0 text-brand-purple" />
+              Quick add: Category will be created with default settings. You can edit it later from the Categories page.
+            </p>
+            <div className="adm-modal-footer">
+              <button
+                className="adm-btn-ghost"
+                onClick={() => {
+                  setShowAddCategoryModal(false);
+                  setNewCategoryName("");
+                }}
+              >
+                Cancel
+              </button>
+              <button className="adm-btn-primary" onClick={addNewCategory}>
+                Add Category
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
+};
