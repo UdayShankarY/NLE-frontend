@@ -4,7 +4,8 @@ import ProductPage from '../pages/ProductPage';
 import BookingRoutePage from '../pages/BookingRoutePage';
 import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
-import GoogleCallbackPage from '../pages/GoogleCallbackPage';
+import ForgotPassword from '../pages/ForgotPassword';
+import ResetPassword from '../pages/ResetPassword';
 
 export default function AppRoutes() {
   return (
@@ -19,7 +20,8 @@ export default function AppRoutes() {
       <Route path="/privacy" element={<TermsPageRoute />} />
       <Route path="/refund" element={<TermsPageRoute />} />
       <Route path="/about" element={<TermsPageRoute />} />
-      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/products" element={<AdminPage />} />
       <Route path="/admin/categories" element={<AdminPage />} />

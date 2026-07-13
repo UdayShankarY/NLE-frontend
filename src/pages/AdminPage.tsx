@@ -53,7 +53,7 @@ export default function AdminPage() {
     setAssistantInput('');
   };
 
-  const handleLogin = (user: AuthUser) => auth.login(user);
+  // Post-login handled centrally in MainLayout; no local handleLogin
 
   return (
     <MainLayout
@@ -81,14 +81,19 @@ export default function AdminPage() {
       onCartClose={() => setCartOpen(false)}
       onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
       onTermsPageOpen={() => navigate('/')}
-      onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >
       {auth.isLoggedIn && auth.isAdmin && auth.user ? (
-        <AdminPanel user={auth.user} onLogout={auth.logout} />
+        <AdminPanel
+          user={auth.user}
+          onLogout={() => {
+            auth.logout();
+            navigate('/');
+          }}
+        />
       ) : (
         <div className="p-10 text-center">
           <h2 className="text-xl font-bold text-ink">Access Denied</h2>

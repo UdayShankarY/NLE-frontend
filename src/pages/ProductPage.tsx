@@ -55,7 +55,7 @@ export default function ProductPage() {
     setAssistantInput('');
   };
 
-  const handleLogin = (user: { id: string; firstName: string; lastName: string; email: string; role: 'user' | 'admin'; phone?: string; createdAt?: string }) => auth.login(user);
+  // Post-login handled centrally in MainLayout; no local handleLogin
   const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
     const routes = {
       terms: '/terms',
@@ -114,7 +114,6 @@ export default function ProductPage() {
       }}
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
       authModalOpen={auth.isOpen}

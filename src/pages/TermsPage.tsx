@@ -61,7 +61,7 @@ export default function TermsPage() {
     setAssistantInput('');
   };
 
-  const handleLogin = (user: AuthUser) => auth.login(user);
+  // Post-login handled centrally in MainLayout; no local handleLogin
   const pageKey = ROUTE_TO_PAGEKEY[location.pathname as keyof typeof ROUTE_TO_PAGEKEY] || 'terms';
 
   return (
@@ -96,7 +96,6 @@ export default function TermsPage() {
       }}
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={() => navigate('/')}
-      onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
       authModalOpen={auth.isOpen}

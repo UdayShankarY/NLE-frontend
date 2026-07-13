@@ -13,6 +13,10 @@ import { useProducts } from './hooks/useProducts';
 import { useCart } from './hooks/useCart';
 import MainLayout from './layouts/MainLayout';
 import type { AuthUser, AdminProduct } from './types';
+import { trackPageView } from "./lib/analytics";
+
+
+
 
 const buildCatalogPath = (category: string | null, subcategory: string | null, search: string | null) => {
   const normalizedCategory = category?.trim() ?? null;
@@ -34,6 +38,11 @@ const buildCatalogPath = (category: string | null, subcategory: string | null, s
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+  
   const params = useParams<{ category?: string; subcategory?: string }>();
   const { t } = useLanguage();
   const auth = useAuth();
@@ -81,7 +90,7 @@ export default function App() {
     setAssistantInput('');
   };
 
-  const handleLogin = (user: AuthUser) => auth.login(user);
+  // Post-login handled centrally in MainLayout; pass no onLogin to avoid duplication
   const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
     const routes = {
       terms: '/terms',
@@ -247,7 +256,6 @@ export default function App() {
       onCartClose={handleCartClose}
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
       authModalOpen={auth.isOpen}

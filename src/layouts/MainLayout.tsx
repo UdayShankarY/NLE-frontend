@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthModal } from '../components/AuthModal';
@@ -93,6 +94,17 @@ export default function MainLayout({
   authModalTab,
   hideShell = false,
 }: MainLayoutProps) {
+  const navigate = useNavigate();
+
+  const internalHandleLogin = (user: AuthUser) => {
+    try {
+      auth.login(user);
+    } catch (err) {
+      // fallback: if auth object doesn't expose login, ignore
+    }
+    const redirectPath = user.role === 'admin' ? '/admin' : '/';
+    navigate(redirectPath, { replace: true });
+  };
   return (
     <>
       <ToastContainer position="top-right" autoClose={3000} theme="colored" />
@@ -133,7 +145,7 @@ export default function MainLayout({
               onLoginClick={onCartLoginClick}
             />
           )}
-          <AuthModal isOpen={authModalOpen} tab={authModalTab} onClose={onCloseAuth} onSetTab={onSetAuthTab} onLogin={onLogin} />
+          <AuthModal isOpen={authModalOpen} tab={authModalTab} onClose={onCloseAuth} onSetTab={onSetAuthTab} onLogin={onLogin || internalHandleLogin} />
         </>
       )}
     </>

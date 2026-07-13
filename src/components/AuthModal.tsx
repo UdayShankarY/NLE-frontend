@@ -1,6 +1,7 @@
 import { auth } from "../firebase";
-import { GoogleAuthProvider, signInWithRedirect } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Mail, Lock, User, Phone, Eye, EyeOff, Gift, Zap, PartyPopper, Mailbox } from 'lucide-react';
 import type { AuthTab, AuthUser } from '../types';
 import { cn } from '../lib/utils';
@@ -159,7 +160,36 @@ const LoginForm: React.FC<{
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+
+      const res = await fetch(getApiUrl('/api/auth/google'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          firstName: firebaseUser.displayName?.split(' ')[0] || '',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          photoURL: firebaseUser.photoURL || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Google auth failed:', data.msg);
+        setErrors({ email: data.msg || 'Google login failed' });
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      onSuccess({
+        id: data.user.id,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        email: data.user.email,
+        role: data.user.role,
+      });
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -268,7 +298,36 @@ const RegisterForm: React.FC<{
     try {
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
-      await signInWithRedirect(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
+
+      const res = await fetch(getApiUrl('/api/auth/google'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          firstName: firebaseUser.displayName?.split(' ')[0] || '',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          photoURL: firebaseUser.photoURL || '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        console.error('Google auth failed:', data.msg);
+        setErrors({ email: data.msg || 'Google login failed' });
+        return;
+      }
+
+      localStorage.setItem('token', data.token);
+      onSuccess({
+        id: data.user.id,
+        firstName: data.user.firstName,
+        lastName: data.user.lastName,
+        email: data.user.email,
+        role: data.user.role,
+      });
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -565,6 +624,7 @@ const SuccessPanel: React.FC<{ title: string; msg: string; onClose: () => void }
 // ── Main AuthModal ─────────────────────────────────
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, tab, onClose, onSetTab, onLogin }) => {
   const [successData, setSuccessData] = useState<{ title: string; msg: string } | null>(null);
+  const navigate = useNavigate();
 
   const handleSuccess = useCallback((user: AuthUser, title: string, msg: string) => {
     setSuccessData({ title, msg });
@@ -639,7 +699,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, tab, onClose, onSe
             <LoginForm
               onSuccess={u => handleSuccess(u, 'Welcome back! 👋', "You're now logged into TheDecorParty")}
               onRegister={() => onSetTab('register')}
-              onForgot={() => onSetTab('forgot')}
+              onForgot={() => { onClose(); navigate('/forgot-password'); }}
             />
           )}
           {tab === 'register' && (

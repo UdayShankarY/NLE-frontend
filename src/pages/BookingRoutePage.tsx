@@ -56,7 +56,7 @@ export default function BookingRoutePage() {
     setAssistantInput('');
   };
 
-  const handleLogin = (user: AuthUser) => auth.login(user);
+  // Post-login handled centrally in MainLayout; no local handleLogin
   const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
     const routes = {
       terms: '/terms',
@@ -127,7 +127,6 @@ export default function BookingRoutePage() {
       }}
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
       authModalOpen={auth.isOpen}
