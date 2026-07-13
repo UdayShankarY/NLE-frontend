@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Pencil, Eye, RotateCcw, Save, Lightbulb } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { getApiUrl } from '../../lib/api';
 
-const API = '/api/site-content';
+const API = getApiUrl('/api/site-content');
 
 const PAGES = [
   { key: 'product-terms', label: 'Product Page Terms', icon: '📦' },

@@ -6,8 +6,9 @@ import { toast } from "react-toastify";
 import { Pencil, Eye, EyeOff, Trash2, Layers, Plus, Upload, Link as LinkIcon, X } from "lucide-react";
 import { EmptyState } from "../EmptyState";
 import { cn } from "../../lib/utils";
+import { getApiUrl } from '../../lib/api';
 
-const API = '/api/categories';
+const API = getApiUrl('/api/categories');
 
 export const CategoriesView = () => {
   const [cats, setCats] = useState<AdminCategory[]>([]);

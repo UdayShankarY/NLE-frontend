@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Users, Gift, FolderTree, Images, type LucideIcon } from 'lucide-react';
 import { LoadingState } from '../EmptyState';
-const API = '/api/dashboard/stats';
+import { getApiUrl } from '../../lib/api';
+const API = getApiUrl('/api/dashboard/stats');
 
 interface DashboardData {
   totalUsers: number;

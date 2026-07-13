@@ -5,9 +5,10 @@ import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "react-toastify";
 import { Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Star, Lightbulb } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { getApiUrl } from '../../lib/api';
 
-const API = '/api/products';
-const CAT_API = '/api/categories';
+const API = getApiUrl('/api/products');
+const CAT_API = getApiUrl('/api/categories');
 
 export const ProductsView = () => {
   const [products, setProducts] = useState<AdminProduct[]>([]);

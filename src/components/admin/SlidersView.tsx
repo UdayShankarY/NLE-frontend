@@ -6,8 +6,9 @@ import { toast } from "react-toastify";
 import { GripVertical, Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Check, Lightbulb } from "lucide-react";
 import { EmptyState } from "../EmptyState";
 import { cn } from "../../lib/utils";
+import { getApiUrl } from '../../lib/api';
 
-const API = '/api/sliders';
+const API = getApiUrl('/api/sliders');
 
 const GRADIENT_PRESETS = [
   { name: "Purple Pink", value: "linear-gradient(135deg, rgba(107,33,168,0.85), rgba(236,72,153,0.75))" },
