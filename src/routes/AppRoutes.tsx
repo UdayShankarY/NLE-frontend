@@ -10,6 +10,8 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<App />} />
+      <Route path="/category/:category" element={<App />} />
+      <Route path="/category/:category/:subcategory" element={<App />} />
       <Route path="/product/:id" element={<ProductPage />} />
       <Route path="/booking/:id" element={<BookingRoutePage />} />
       <Route path="/cart" element={<App />} />

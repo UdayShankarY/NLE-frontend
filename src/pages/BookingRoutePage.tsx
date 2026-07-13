@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BookingPage as BookingForm } from '../components/BookingPage';
 import type { AssistantMessage } from '../components/AssistantPanel';
 import { LoadingState } from '../components/EmptyState';
@@ -12,13 +12,14 @@ import type { AdminProduct, AuthUser, BookingDetails } from '../types';
 
 export default function BookingRoutePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const { t } = useLanguage();
   const auth = useAuth();
   const cart = useCart();
   const { grouped, categories, loading } = useProducts();
 
-  const [cartOpen, setCartOpen] = useState(false);
+  const cartOpen = location.pathname === '/cart';
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
     { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
@@ -77,7 +78,7 @@ export default function BookingRoutePage() {
   ) => {
     if (method === 'razorpay') {
       cart.addItem(selectedProduct, bookingDetails);
-      setCartOpen(true);
+      navigate('/cart');
     }
   };
 
@@ -117,11 +118,15 @@ export default function BookingRoutePage() {
       onCartRemove={cart.removeItem}
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
-      onCartClose={() => setCartOpen(false)}
-      onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
-      termsPage={null}
+      onCartClose={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/');
+        }
+      }}
+      onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onTermsPageClose={() => navigate(-1)}
       onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}

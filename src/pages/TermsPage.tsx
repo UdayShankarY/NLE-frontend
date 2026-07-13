@@ -24,7 +24,7 @@ export default function TermsPage() {
   const cart = useCart();
   const { categories } = useProducts();
 
-  const [cartOpen, setCartOpen] = useState(false);
+  const cartOpen = location.pathname === '/cart';
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
     { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
@@ -87,11 +87,15 @@ export default function TermsPage() {
       onCartRemove={cart.removeItem}
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
-      onCartClose={() => setCartOpen(false)}
-      onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
-      termsPage={null}
+      onCartClose={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/');
+        }
+      }}
+      onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={() => navigate('/')}
-      onTermsPageClose={() => navigate(-1)}
       onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}

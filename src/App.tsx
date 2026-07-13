@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { HeroSlider } from './components/HeroSlider';
 import { ProductSlider } from './components/ProductSlider';
 import { SearchBar } from './components/SearchBar';
@@ -14,23 +14,41 @@ import { useCart } from './hooks/useCart';
 import MainLayout from './layouts/MainLayout';
 import type { AuthUser, AdminProduct } from './types';
 
+const buildCatalogPath = (category: string | null, subcategory: string | null, search: string | null) => {
+  const normalizedCategory = category?.trim() ?? null;
+  const normalizedSubcategory = subcategory?.trim() ?? null;
+  const hasSearch = (search ?? '').trim();
+
+  const pathname = normalizedCategory
+    ? normalizedSubcategory && normalizedSubcategory !== '__all__'
+      ? `/category/${encodeURIComponent(normalizedCategory)}/${encodeURIComponent(normalizedSubcategory)}`
+      : `/category/${encodeURIComponent(normalizedCategory)}`
+    : '/';
+
+  if (!hasSearch) return pathname;
+  const query = new URLSearchParams();
+  query.set('search', hasSearch);
+  return `${pathname}?${query.toString()}`;
+};
+
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = useParams<{ category?: string; subcategory?: string }>();
   const { t } = useLanguage();
   const auth = useAuth();
   const { grouped, categories, loading } = useProducts();
   const cart = useCart();
-  const [cartOpen, setCartOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
-  const [activeSubcategory, setActiveSubcategory] = useState<string | null>(null);
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
     { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
   ]);
   const [assistantInput, setAssistantInput] = useState('');
   const assistantInputRef = useRef<HTMLInputElement>(null);
-
+  const activeCategory = params.category ? decodeURIComponent(params.category) : null;
+  const activeSubcategory = params.subcategory ? decodeURIComponent(params.subcategory) : null;
+  const search = new URLSearchParams(location.search).get('search') ?? '';
+  const cartOpen = location.pathname === '/cart';
   const openBooking = (product: AdminProduct) => {
     navigate(`/booking/${product._id}`);
   };
@@ -84,9 +102,23 @@ export default function App() {
   }, {} as typeof grouped);
 
   const handleLogoClick = () => {
-    setActiveCategory(null);
-    setActiveSubcategory(null);
-    setSearch('');
+    navigate('/');
+  };
+
+  const handleCatalogSelect = (catName: string, subName?: string) => {
+    navigate(buildCatalogPath(catName, subName && subName !== '__all__' ? subName : null, ''));
+  };
+
+  const handleSearchChange = (value: string) => {
+    navigate(buildCatalogPath(activeCategory, activeSubcategory, value));
+  };
+
+  const handleCartClose = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
   };
 
   const handleViewDetails = (product: AdminProduct) => {
@@ -98,14 +130,14 @@ export default function App() {
 
     return (
       <>
-        <SearchBar value={search} onChange={setSearch} />
+        <SearchBar value={search} onChange={handleSearchChange} />
 
         {showHome && <HeroSlider />}
 
         {showHome && categories.length > 0 && (
           <CategoryGrid
             categories={categories}
-            onSelect={catName => { setActiveCategory(catName); setActiveSubcategory(null); }}
+            onSelect={handleCatalogSelect}
           />
         )}
 
@@ -129,9 +161,9 @@ export default function App() {
             <SubcategoryScroll
               categoryName={activeCategory}
               subcategories={subs}
-              onBack={() => { setActiveCategory(null); setActiveSubcategory(null); }}
-              onSelectSubcategory={name => setActiveSubcategory(name)}
-              onViewAll={() => setActiveSubcategory('__all__')}
+              onBack={() => navigate(buildCatalogPath(activeCategory, null, search))}
+              onSelectSubcategory={name => navigate(buildCatalogPath(activeCategory, name, ''))}
+              onViewAll={() => navigate(buildCatalogPath(activeCategory, null, ''))}
             />
           );
         })()}
@@ -144,13 +176,13 @@ export default function App() {
               title="No packages found"
               description={search ? `No results for "${search}"` : 'No packages in this category yet.'}
               actionLabel="Clear filters"
-              onAction={() => { setSearch(''); setActiveSubcategory(null); setActiveCategory(null); }}
+              onAction={() => navigate('/')}
             />
           ) : (
             <>
               {activeSubcategory && activeSubcategory !== '__all__' && (
                 <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-4 pt-4 text-sm text-ink-muted md:px-6">
-                  <button className="font-medium text-ink hover:text-brand-purple" onClick={() => setActiveSubcategory(null)}>&larr; {activeCategory}</button>
+                  <button className="font-medium text-ink hover:text-brand-purple" onClick={() => navigate(buildCatalogPath(activeCategory, null, search))}>&larr; {activeCategory}</button>
                   <span>/ {activeSubcategory}</span>
                 </div>
               )}
@@ -175,7 +207,7 @@ export default function App() {
             <EmptyState
               title={`No results for "${search}"`}
               actionLabel="Clear search"
-              onAction={() => setSearch('')}
+              onAction={() => navigate(buildCatalogPath(activeCategory, activeSubcategory, ''))}
             />
           ) : (
             <>
@@ -198,11 +230,7 @@ export default function App() {
       showAssistantButton={!auth.isLoggedIn && !auth.isAdmin}
       showMobileMenu={!auth.isLoggedIn && !auth.isAdmin}
       categories={categories}
-      onSelectCategory={(catName, subName) => {
-        setActiveCategory(catName);
-        setActiveSubcategory(subName || null);
-        setSearch('');
-      }}
+      onSelectCategory={handleCatalogSelect}
       assistantOpen={assistantOpen}
       assistantMessages={assistantMessages}
       assistantInput={assistantInput}
@@ -216,11 +244,9 @@ export default function App() {
       onCartRemove={cart.removeItem}
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
-      onCartClose={() => setCartOpen(false)}
-      onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
-      termsPage={null}
+      onCartClose={handleCartClose}
+      onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onTermsPageClose={() => navigate(-1)}
       onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}

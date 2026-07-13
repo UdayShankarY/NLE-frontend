@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ProductDetailPage } from '../components/ProductDetailPage';
 import type { AssistantMessage } from '../components/AssistantPanel';
 import MainLayout from '../layouts/MainLayout';
@@ -11,13 +11,14 @@ import { LoadingState } from '../components/EmptyState';
 
 export default function ProductPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
   const { t } = useLanguage();
   const auth = useAuth();
   const cart = useCart();
   const { grouped, categories, loading } = useProducts();
 
-  const [cartOpen, setCartOpen] = useState(false);
+  const cartOpen = location.pathname === '/cart';
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
     { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
@@ -104,11 +105,15 @@ export default function ProductPage() {
       onCartRemove={cart.removeItem}
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
-      onCartClose={() => setCartOpen(false)}
-      onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
-      termsPage={null}
+      onCartClose={() => {
+        if (window.history.length > 1) {
+          navigate(-1);
+        } else {
+          navigate('/');
+        }
+      }}
+      onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
-      onTermsPageClose={() => navigate(-1)}
       onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}

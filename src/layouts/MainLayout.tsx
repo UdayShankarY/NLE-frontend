@@ -45,9 +45,7 @@ interface MainLayoutProps {
   onCartClear: () => void;
   onCartClose: () => void;
   onCartLoginClick: () => void;
-  termsPage?: 'terms' | 'privacy' | 'refund' | 'about' | null;
   onTermsPageOpen: (key: 'terms' | 'privacy' | 'refund' | 'about') => void;
-  onTermsPageClose?: () => void;
   onLogin: (user: AuthUser) => void;
   onCloseAuth: () => void;
   onSetAuthTab: (tab: AuthTab) => void;
@@ -87,9 +85,7 @@ export default function MainLayout({
   onCartClear,
   onCartClose,
   onCartLoginClick,
-  termsPage,
   onTermsPageOpen,
-  onTermsPageClose,
   onLogin,
   onCloseAuth,
   onSetAuthTab,

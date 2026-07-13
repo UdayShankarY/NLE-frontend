@@ -80,9 +80,7 @@ export default function AdminPage() {
       onCartClear={cart.clearCart}
       onCartClose={() => setCartOpen(false)}
       onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
-      termsPage={null}
       onTermsPageOpen={() => navigate('/')}
-      onTermsPageClose={() => navigate(-1)}
       onLogin={handleLogin}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
