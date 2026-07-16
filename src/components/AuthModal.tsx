@@ -6,6 +6,7 @@ import { X, Mail, Lock, User, Phone, Eye, EyeOff, Gift, Zap, PartyPopper, Mailbo
 import type { AuthTab, AuthUser } from '../types';
 import { cn } from '../lib/utils';
 import { getApiUrl } from '../lib/api';
+import { trackLogin, trackSignup } from '../lib/analytics';
 function getGoogleAuthErrorMessage(error: unknown): string {
   const code = typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code?: string }).code)
@@ -221,6 +222,7 @@ const LoginForm: React.FC<{
         return;
       }
       localStorage.setItem('token', data.token);
+      trackLogin('email');
       onSuccess({
         id: data.user.id,
         firstName: data.user.firstName,
@@ -321,6 +323,7 @@ const RegisterForm: React.FC<{
       }
 
       localStorage.setItem('token', data.token);
+      trackSignup('google');
       onSuccess({
         id: data.user.id,
         firstName: data.user.firstName,
@@ -375,6 +378,7 @@ const RegisterForm: React.FC<{
       const loginData = await loginRes.json();
       if (loginRes.ok) {
         localStorage.setItem('token', loginData.token);
+        trackSignup('email');
         onSuccess({
           id: loginData.user.id,
           firstName: loginData.user.firstName,

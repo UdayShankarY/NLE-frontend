@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, MapPin, Zap, Lock, Palette } from 'lucide-react';
 import type { AdminProduct } from '../types';
 import { cn } from '../lib/utils';
+import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
 
 interface Props {
   product: AdminProduct;
@@ -224,8 +225,17 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           )}
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <BookButton onClick={() => onBook(product, 'razorpay')} className="flex-1" />
-            <WhatsAppButton onClick={() => onBook(product, 'whatsapp')} className="flex-1" />
+            <BookButton onClick={() => {
+              trackBookingStarted();
+              onBook(product, 'razorpay');
+            }} className="flex-1" />
+          <WhatsAppButton onClick={() => {
+          trackWhatsappClick();
+
+          setTimeout(() => {
+            onBook(product, "whatsapp");
+          }, 500);
+        }} className="flex-1" />
           </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-xs text-ink-muted">

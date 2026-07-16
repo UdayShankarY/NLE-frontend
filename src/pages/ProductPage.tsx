@@ -8,6 +8,7 @@ import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import { LoadingState } from '../components/EmptyState';
+import { trackViewItem } from '../lib/analytics';
 
 export default function ProductPage() {
   const navigate = useNavigate();
@@ -70,6 +71,12 @@ export default function ProductPage() {
     return Object.values(grouped).flat().find(item => item._id === id) || null;
   }, [grouped, id]);
 
+  useEffect(() => {
+    if (product) {
+      trackViewItem(product._id, product.name, product.categoryName, product.price);
+    }
+  }, [product]);
+
   const content = loading ? (
     <LoadingState label="Loading package..." />
   ) : product ? (
@@ -116,6 +123,7 @@ export default function ProductPage() {
       onTermsPageOpen={handleTermsPageOpen}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
+      onLogin={() => auth.open('login')}
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >

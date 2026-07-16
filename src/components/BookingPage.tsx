@@ -4,6 +4,7 @@ import type { AdminProduct, BookingDetails } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getApiUrl } from '../lib/api';
+import { trackBeginCheckout, trackPaymentFailed, trackPurchase } from '../lib/analytics';
 
 interface BookingPageProps {
   product: AdminProduct;
@@ -79,6 +80,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     return;
   }
 
+  trackBeginCheckout(product._id, product.name, product.price);
   setLoading(true);
   setError('');
 
@@ -107,6 +109,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
 
       handler: () => {
         alert("Payment Successful");
+        trackPurchase(`booking-${product._id}-${Date.now()}`, product.price);
         onConfirm(product, form, 'razorpay');
       },
     };
@@ -115,6 +118,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     rz.open();
 
   } catch (err: any) {
+    trackPaymentFailed();
     setError(err?.message || 'Payment failed.');
   }
 

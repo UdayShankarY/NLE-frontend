@@ -12,8 +12,8 @@ import { useAuth } from './hooks/useAuth';
 import { useProducts } from './hooks/useProducts';
 import { useCart } from './hooks/useCart';
 import MainLayout from './layouts/MainLayout';
-import type { AuthUser, AdminProduct } from './types';
-import { trackPageView } from "./lib/analytics";
+import type { AdminProduct } from './types';
+import { trackTestEvent } from "../lib/analytics";
 
 
 
@@ -39,10 +39,6 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    trackPageView(location.pathname + location.search);
-  }, [location]);
-  
   const params = useParams<{ category?: string; subcategory?: string }>();
   const { t } = useLanguage();
   const auth = useAuth();
@@ -258,6 +254,7 @@ export default function App() {
       onTermsPageOpen={handleTermsPageOpen}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
+      onLogin={() => auth.open('login')}
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >

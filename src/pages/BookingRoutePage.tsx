@@ -9,6 +9,7 @@ import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import type { AdminProduct, AuthUser, BookingDetails } from '../types';
+import { trackBookingStarted } from '../lib/analytics';
 
 export default function BookingRoutePage() {
   const navigate = useNavigate();
@@ -70,6 +71,12 @@ export default function BookingRoutePage() {
   const product = React.useMemo(() => {
     return Object.values(grouped).flat().find(item => item._id === id) || null;
   }, [grouped, id]);
+
+  useEffect(() => {
+    if (product) {
+      trackBookingStarted();
+    }
+  }, [product]);
 
   const handleBookingConfirm = (
     selectedProduct: AdminProduct,
