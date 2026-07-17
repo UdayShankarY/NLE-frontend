@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
-import type { AuthUser } from '../types';
 
 export default function AdminPage() {
   const navigate = useNavigate();
@@ -29,6 +28,20 @@ export default function AdminPage() {
       window.requestAnimationFrame(() => assistantInputRef.current?.focus());
     }
   }, [assistantOpen]);
+
+  useEffect(() => {
+    if (auth.isLoading || !auth.initialized) return;
+
+    if (!auth.isLoggedIn || !auth.user) {
+      auth.open('login');
+      navigate('/', { replace: true });
+      return;
+    }
+
+    if (!auth.isAdmin) {
+      navigate('/', { replace: true });
+    }
+  }, [auth.isAdmin, auth.isLoading, auth.initialized, auth.isLoggedIn, auth.open, auth.user, navigate]);
 
   const getAssistantReply = (message: string) => {
     const text = message.toLowerCase();
@@ -53,7 +66,45 @@ export default function AdminPage() {
     setAssistantInput('');
   };
 
-  // Post-login handled centrally in MainLayout; no local handleLogin
+  if (auth.isLoading || !auth.initialized) {
+    return (
+      <MainLayout
+        auth={auth}
+        t={t}
+        onAssistantOpen={() => setAssistantOpen(true)}
+        onLogoClick={() => navigate('/')}
+        showAssistantButton={!auth.isLoggedIn && !auth.isAdmin}
+        showMobileMenu={!auth.isLoggedIn && !auth.isAdmin}
+        categories={categories}
+        onSelectCategory={() => navigate('/')}
+        assistantOpen={assistantOpen}
+        assistantMessages={assistantMessages}
+        assistantInput={assistantInput}
+        assistantInputRef={assistantInputRef}
+        onAssistantClose={() => setAssistantOpen(false)}
+        onAssistantInputChange={setAssistantInput}
+        onAssistantSubmit={handleAssistantSubmit}
+        cartOpen={cartOpen}
+        cartItems={cart.items}
+        cartTotal={cart.total}
+        onCartRemove={cart.removeItem}
+        onCartUpdateQty={cart.updateQty}
+        onCartClear={cart.clearCart}
+        onCartClose={() => setCartOpen(false)}
+        onCartLoginClick={() => { setCartOpen(false); auth.open('login'); }}
+        onTermsPageOpen={() => navigate('/')}
+        onCloseAuth={auth.close}
+        onSetAuthTab={auth.setTab}
+        authModalOpen={auth.isOpen}
+        authModalTab={auth.tab}
+      >
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold text-ink">Checking access...</h2>
+          <p className="mt-2 text-sm text-ink-muted">Please wait while we verify your admin session.</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout
@@ -86,7 +137,17 @@ export default function AdminPage() {
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >
-      {auth.isLoggedIn && auth.isAdmin && auth.user ? (
+      {!auth.isLoggedIn || !auth.user ? (
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold text-ink">Redirecting to login...</h2>
+          <p className="mt-2 text-sm text-ink-muted">Please sign in to continue.</p>
+        </div>
+      ) : !auth.isAdmin ? (
+        <div className="p-10 text-center">
+          <h2 className="text-xl font-bold text-ink">Access Denied</h2>
+          <p className="mt-2 text-sm text-ink-muted">You are not authorized to access the admin panel.</p>
+        </div>
+      ) : (
         <AdminPanel
           user={auth.user}
           onLogout={() => {
@@ -94,11 +155,6 @@ export default function AdminPage() {
             navigate('/');
           }}
         />
-      ) : (
-        <div className="p-10 text-center">
-          <h2 className="text-xl font-bold text-ink">Access Denied</h2>
-          <p className="mt-2 text-sm text-ink-muted">You are not authorized to access the admin panel.</p>
-        </div>
       )}
     </MainLayout>
   );

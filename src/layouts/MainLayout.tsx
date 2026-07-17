@@ -1,5 +1,5 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthModal } from '../components/AuthModal';
@@ -20,9 +20,11 @@ interface MainLayoutProps {
     logout: () => void;
     close: () => void;
     setTab: (tab: AuthTab) => void;
-    login: (user: AuthUser) => void;
+    login: (user: AuthUser, token?: string) => void;
     isOpen: boolean;
     tab: AuthTab;
+    isLoading: boolean;
+    initialized: boolean;
   };
   t: Record<string, string> | Translations;
   onAssistantOpen: () => void;
@@ -47,7 +49,7 @@ interface MainLayoutProps {
   onCartClose: () => void;
   onCartLoginClick: () => void;
   onTermsPageOpen: (key: 'terms' | 'privacy' | 'refund' | 'about') => void;
-  onLogin: (user: AuthUser) => void;
+  onLogin?: (user: AuthUser, token?: string) => void;
   onCloseAuth: () => void;
   onSetAuthTab: (tab: AuthTab) => void;
   authModalOpen: boolean;
@@ -95,15 +97,23 @@ export default function MainLayout({
   hideShell = false,
 }: MainLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const internalHandleLogin = (user: AuthUser) => {
+  useEffect(() => {
+    if (!auth.initialized || !auth.isLoggedIn || auth.tab !== 'success') return;
+
+    const redirectPath = auth.isAdmin ? '/admin' : '/';
+    if (location.pathname !== redirectPath) {
+      navigate(redirectPath, { replace: true });
+    }
+  }, [auth.initialized, auth.isAdmin, auth.isLoggedIn, auth.tab, location.pathname, navigate]);
+
+  const internalHandleLogin = (user: AuthUser, token?: string) => {
     try {
-      auth.login(user);
+      auth.login(user, token);
     } catch (err) {
       // fallback: if auth object doesn't expose login, ignore
     }
-    const redirectPath = user.role === 'admin' ? '/admin' : '/';
-    navigate(redirectPath, { replace: true });
   };
   return (
     <>

@@ -13,7 +13,6 @@ import { useProducts } from './hooks/useProducts';
 import { useCart } from './hooks/useCart';
 import MainLayout from './layouts/MainLayout';
 import type { AdminProduct } from './types';
-import { trackTestEvent } from "../lib/analytics";
 
 
 
@@ -254,7 +253,6 @@ export default function App() {
       onTermsPageOpen={handleTermsPageOpen}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
-      onLogin={() => auth.open('login')}
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >

@@ -32,12 +32,23 @@ function getApiErrorMessage(payload: unknown, fallback: string): string {
   return fallback;
 }
 
+async function parseJsonResponse<T>(response: Response): Promise<T | null> {
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}
+
 interface AuthModalProps {
   isOpen: boolean;
   tab: AuthTab;
   onClose: () => void;
   onSetTab: (tab: AuthTab) => void;
-  onLogin: (user: AuthUser) => void;
+  onLogin: (user: AuthUser, token?: string) => void;
 }
 
 const GoogleIcon = () => (
@@ -144,7 +155,7 @@ const SubmitButton: React.FC<{ loading: boolean; loadingLabel: string; children:
 
 // ── Login Form ──────────────────────────────────────
 const LoginForm: React.FC<{
-  onSuccess: (user: AuthUser) => void;
+  onSuccess: (user: AuthUser, token?: string) => void;
   onRegister: () => void;
   onForgot: () => void;
 }> = ({ onSuccess, onRegister, onForgot }) => {
@@ -176,21 +187,21 @@ const LoginForm: React.FC<{
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        console.error('Google auth failed:', data.msg);
-        setErrors({ email: data.msg || 'Google login failed' });
+      const data = await parseJsonResponse<{ token?: string; user?: { id: string; firstName: string; lastName: string; email: string; role: AuthUser['role'] }; msg?: string; message?: string }>(res);
+      if (!res.ok || !data?.token || !data.user) {
+        const msg = getApiErrorMessage(data, 'Google login failed');
+        console.error('Google auth failed:', msg);
+        setErrors({ email: msg });
         return;
       }
 
-      localStorage.setItem('token', data.token);
       onSuccess({
         id: data.user.id,
         firstName: data.user.firstName,
         lastName: data.user.lastName,
         email: data.user.email,
         role: data.user.role,
-      });
+      }, data.token);
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -215,13 +226,13 @@ const LoginForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        setErrors({ email: data.msg || 'Login failed' });
+      const data = await parseJsonResponse<{ token?: string; user?: { id: string; firstName: string; lastName: string; email: string; role: AuthUser['role'] }; msg?: string; message?: string }>(res);
+      if (!res.ok || !data?.token || !data.user) {
+        const msg = getApiErrorMessage(data, 'Login failed');
+        setErrors({ email: msg });
         setLoading(false);
         return;
       }
-      localStorage.setItem('token', data.token);
       trackLogin('email');
       onSuccess({
         id: data.user.id,
@@ -229,7 +240,7 @@ const LoginForm: React.FC<{
         lastName: data.user.lastName,
         email: data.user.email,
         role: data.user.role,
-      });
+      }, data.token);
     } catch (err) {
       setErrors({ email: 'Connection failed' });
       setLoading(false);
@@ -278,7 +289,7 @@ const LoginForm: React.FC<{
 
 // ── Register Form ──────────────────────────────────
 const RegisterForm: React.FC<{
-  onSuccess: (user: AuthUser) => void;
+  onSuccess: (user: AuthUser, token?: string) => void;
   onLogin: () => void;
 }> = ({ onSuccess, onLogin }) => {
   const [first, setFirst] = useState('');
@@ -315,14 +326,14 @@ const RegisterForm: React.FC<{
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        console.error('Google auth failed:', data.msg);
-        setErrors({ email: data.msg || 'Google login failed' });
+      const data = await parseJsonResponse<{ token?: string; user?: { id: string; firstName: string; lastName: string; email: string; role: AuthUser['role'] }; msg?: string; message?: string }>(res);
+      if (!res.ok || !data?.token || !data.user) {
+        const msg = getApiErrorMessage(data, 'Google login failed');
+        console.error('Google auth failed:', msg);
+        setErrors({ email: msg });
         return;
       }
 
-      localStorage.setItem('token', data.token);
       trackSignup('google');
       onSuccess({
         id: data.user.id,
@@ -330,7 +341,7 @@ const RegisterForm: React.FC<{
         lastName: data.user.lastName,
         email: data.user.email,
         role: data.user.role,
-      });
+      }, data.token);
     } catch (error) {
       const msg = getGoogleAuthErrorMessage(error);
       if (msg) setErrors({ email: msg });
@@ -361,7 +372,7 @@ const RegisterForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ firstName: first, lastName: last, email, password: pass })
       });
-      const data = await res.json();
+      const data = await parseJsonResponse<{ msg?: string; message?: string }>(res);
       if (!res.ok) {
         const msg = getApiErrorMessage(data, 'Registration failed. Please try again.');
         setSubmitError(msg);
@@ -375,9 +386,8 @@ const RegisterForm: React.FC<{
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
-      const loginData = await loginRes.json();
-      if (loginRes.ok) {
-        localStorage.setItem('token', loginData.token);
+      const loginData = await parseJsonResponse<{ token?: string; user?: { id: string; firstName: string; lastName: string; email: string; role: AuthUser['role'] }; msg?: string; message?: string }>(loginRes);
+      if (loginRes.ok && loginData?.token && loginData.user) {
         trackSignup('email');
         onSuccess({
           id: loginData.user.id,
@@ -385,7 +395,7 @@ const RegisterForm: React.FC<{
           lastName: loginData.user.lastName,
           email: loginData.user.email,
           role: loginData.user.role,
-        });
+        }, loginData.token);
       } else {
         // Registration succeeded but login failed, redirect to login
         setSubmitError('Registration successful, but auto login failed. Please login manually.');
@@ -585,7 +595,7 @@ export const PhoneForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUse
 };
 
 // ── Forgot Password ────────────────────────────────
-const ForgotForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUser) => void }> = ({ onBack, onSuccess }) => {
+const ForgotForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUser, token?: string) => void }> = ({ onBack, onSuccess }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
 
@@ -630,11 +640,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, tab, onClose, onSe
   const [successData, setSuccessData] = useState<{ title: string; msg: string } | null>(null);
   const navigate = useNavigate();
 
-  const handleSuccess = useCallback((user: AuthUser, title: string, msg: string) => {
-    setSuccessData({ title, msg });
-    onSetTab('success');
-    onLogin(user);
-  }, [onLogin, onSetTab]);
+  const handleSuccess = useCallback(
+    (user: AuthUser, token: string | undefined, title: string, msg: string) => {
+      setSuccessData({ title, msg });
+      onLogin(user, token);
+    },
+    [onLogin]
+  );
 
   useEffect(() => {
     if (!isOpen) setSuccessData(null);
@@ -701,21 +713,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, tab, onClose, onSe
 
           {tab === 'login' && (
             <LoginForm
-              onSuccess={u => handleSuccess(u, 'Welcome back! 👋', "You're now logged into TheDecorParty")}
+              onSuccess={(u, token) => handleSuccess(u, token, 'Welcome back! 👋', "You're now logged into TheDecorParty")}
               onRegister={() => onSetTab('register')}
               onForgot={() => { onClose(); navigate('/forgot-password'); }}
             />
           )}
           {tab === 'register' && (
             <RegisterForm
-              onSuccess={u => handleSuccess(u, 'Account created! 🎉', `Welcome, ${u.firstName}! Start planning your first event`)}
+              onSuccess={(u, token) => handleSuccess(u, token, 'Account created! 🎉', `Welcome, ${u.firstName}! Start planning your first event`)}
               onLogin={() => onSetTab('login')}
             />
           )}
           {tab === 'forgot' && (
             <ForgotForm
               onBack={() => onSetTab('login')}
-              onSuccess={u => handleSuccess(u, 'Email Sent! 📧', `A password reset link has been sent to ${u.email}`)}
+              onSuccess={(u, token) => handleSuccess(u, token, 'Email Sent! 📧', `A password reset link has been sent to ${u.email}`)}
             />
           )}
           {tab === 'success' && successData && (
