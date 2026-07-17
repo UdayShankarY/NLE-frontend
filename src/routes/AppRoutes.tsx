@@ -51,10 +51,12 @@ export default function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/admin" element={<AdminPage />} />
+        <Route path="/admin/dashboard" element={<AdminPage />} />
         <Route path="/admin/products" element={<AdminPage />} />
         <Route path="/admin/categories" element={<AdminPage />} />
         <Route path="/admin/users" element={<AdminPage />} />
         <Route path="/admin/orders" element={<AdminPage />} />
+        <Route path="/admin/bookings" element={<AdminPage />} />
         <Route path="/admin/sliders" element={<AdminPage />} />
         <Route path="/admin/terms" element={<AdminPage />} />
       </Routes>

@@ -102,6 +102,8 @@ export default function MainLayout({
   useEffect(() => {
     if (!auth.initialized || !auth.isLoggedIn || auth.tab !== 'success') return;
 
+    if (location.pathname.startsWith('/admin')) return;
+
     const redirectPath = auth.isAdmin ? '/admin' : '/';
     if (location.pathname !== redirectPath) {
       navigate(redirectPath, { replace: true });

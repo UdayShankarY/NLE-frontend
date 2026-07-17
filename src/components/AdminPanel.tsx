@@ -25,6 +25,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
         return 'sliders';
       case 'orders':
         return 'orders';
+      case 'bookings':
+        return 'orders';
       case 'users':
         return 'users';
       case 'terms':
