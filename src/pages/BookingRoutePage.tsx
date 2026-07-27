@@ -1,14 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useAI } from '../context/AIContext';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { BookingPage as BookingForm } from '../components/BookingPage';
-import type { AssistantMessage } from '../components/AssistantPanel';
 import { LoadingState } from '../components/EmptyState';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
-import type { AdminProduct, AuthUser, BookingDetails } from '../types';
+import type { AdminProduct, BookingDetails } from '../types';
 import { trackBookingStarted } from '../lib/analytics';
 
 export default function BookingRoutePage() {
@@ -22,40 +22,14 @@ export default function BookingRoutePage() {
 
   const cartOpen = location.pathname === '/cart';
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
-    { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
-  ]);
-  const [assistantInput, setAssistantInput] = useState('');
-  const assistantInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (assistantOpen) {
-      window.requestAnimationFrame(() => assistantInputRef.current?.focus());
-    }
-  }, [assistantOpen]);
-
-  const getAssistantReply = (message: string) => {
-    const text = message.toLowerCase();
-    if (text.includes('price') || text.includes('cost')) {
-      return 'Our packages vary by theme and guest count. Share your event type and number of guests and I will guide you to the best option.';
-    }
-    if (text.includes('book') || text.includes('availability') || text.includes('date')) {
-      return 'We can help check availability for your preferred date. Tell me your date and city and I will point you to the next step.';
-    }
-    return 'Thanks for reaching out! I can help with packages, availability, and decor ideas. Tell me a little more about your event.';
-  };
-
-  const handleAssistantSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = assistantInput.trim();
-    if (!trimmed) return;
-
-    const userMessage: AssistantMessage = { id: Date.now(), sender: 'user', text: trimmed };
-    const botMessage: AssistantMessage = { id: Date.now() + 1, sender: 'bot', text: getAssistantReply(trimmed) };
-
-    setAssistantMessages(prev => [...prev, userMessage, botMessage]);
-    setAssistantInput('');
-  };
+  const {
+  messages,
+  input,
+  inputRef,
+  setInput,
+  sendMessage,
+} = useAI();
+  
 
   // Post-login handled centrally in MainLayout; no local handleLogin
   const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
@@ -113,12 +87,12 @@ export default function BookingRoutePage() {
       categories={categories}
       onSelectCategory={() => navigate('/')}
       assistantOpen={assistantOpen}
-      assistantMessages={assistantMessages}
-      assistantInput={assistantInput}
-      assistantInputRef={assistantInputRef}
+      assistantMessages={messages}
+      assistantInput={input}
+      assistantInputRef={inputRef}
       onAssistantClose={() => setAssistantOpen(false)}
-      onAssistantInputChange={setAssistantInput}
-      onAssistantSubmit={handleAssistantSubmit}
+      onAssistantInputChange={setInput}
+      onAssistantSubmit={sendMessage}
       cartOpen={cartOpen}
       cartItems={cart.items}
       cartTotal={cart.total}

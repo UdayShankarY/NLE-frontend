@@ -1,19 +1,20 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ProductDetailPage } from '../components/ProductDetailPage';
-import type { AssistantMessage } from '../components/AssistantPanel';
+import { LoadingState } from '../components/EmptyState';
 import MainLayout from '../layouts/MainLayout';
+import { useAI } from '../context/AIContext';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
-import { LoadingState } from '../components/EmptyState';
 import { trackViewItem } from '../lib/analytics';
 
 export default function ProductPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { id } = useParams();
+
   const { t } = useLanguage();
   const auth = useAuth();
   const cart = useCart();
@@ -21,59 +22,43 @@ export default function ProductPage() {
 
   const cartOpen = location.pathname === '/cart';
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
-    { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
-  ]);
-  const [assistantInput, setAssistantInput] = useState('');
-  const assistantInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (assistantOpen) {
-      window.requestAnimationFrame(() => assistantInputRef.current?.focus());
-    }
-  }, [assistantOpen]);
+  const {
+    messages,
+    input,
+    inputRef,
+    setInput,
+    sendMessage,
+  } = useAI();
 
-  const getAssistantReply = (message: string) => {
-    const text = message.toLowerCase();
-    if (text.includes('price') || text.includes('cost')) {
-      return 'Our packages vary by theme and guest count. Share your event type and number of guests and I will guide you to the best option.';
-    }
-    if (text.includes('book') || text.includes('availability') || text.includes('date')) {
-      return 'We can help check availability for your preferred date. Tell me your date and city and I will point you to the next step.';
-    }
-    return 'Thanks for reaching out! I can help with packages, availability, and decor ideas. Tell me a little more about your event.';
-  };
-
-  const handleAssistantSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = assistantInput.trim();
-    if (!trimmed) return;
-
-    const userMessage: AssistantMessage = { id: Date.now(), sender: 'user', text: trimmed };
-    const botMessage: AssistantMessage = { id: Date.now() + 1, sender: 'bot', text: getAssistantReply(trimmed) };
-
-    setAssistantMessages(prev => [...prev, userMessage, botMessage]);
-    setAssistantInput('');
-  };
-
-  // Post-login handled centrally in MainLayout; no local handleLogin
-  const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
+  // Post-login handled centrally in MainLayout
+  const handleTermsPageOpen = (
+    pageKey: 'terms' | 'privacy' | 'refund' | 'about'
+  ) => {
     const routes = {
       terms: '/terms',
       privacy: '/privacy',
       refund: '/refund',
       about: '/about',
     } as const;
+
     navigate(routes[pageKey]);
   };
 
   const product = React.useMemo(() => {
-    return Object.values(grouped).flat().find(item => item._id === id) || null;
+    return Object.values(grouped)
+      .flat()
+      .find((item) => item._id === id) || null;
   }, [grouped, id]);
 
   useEffect(() => {
     if (product) {
-      trackViewItem(product._id, product.name, product.categoryName, product.price);
+      trackViewItem(
+        product._id,
+        product.name,
+        product.categoryName,
+        product.price
+      );
     }
   }, [product]);
 
@@ -83,10 +68,14 @@ export default function ProductPage() {
     <ProductDetailPage
       product={product}
       onBack={() => navigate(-1)}
-      onBook={(selectedProduct) => navigate(`/booking/${selectedProduct._id}`)}
+      onBook={(selectedProduct) =>
+        navigate(`/booking/${selectedProduct._id}`)
+      }
     />
   ) : (
-    <div className="mx-auto max-w-[1400px] px-4 py-8 text-sm text-ink-muted">Package not found.</div>
+    <div className="mx-auto max-w-[1400px] px-4 py-8 text-sm text-ink-muted">
+      Package not found.
+    </div>
   );
 
   return (
@@ -99,19 +88,22 @@ export default function ProductPage() {
       showMobileMenu
       categories={categories}
       onSelectCategory={() => navigate('/')}
+
       assistantOpen={assistantOpen}
-      assistantMessages={assistantMessages}
-      assistantInput={assistantInput}
-      assistantInputRef={assistantInputRef}
+      assistantMessages={messages}
+      assistantInput={input}
+      assistantInputRef={inputRef}
       onAssistantClose={() => setAssistantOpen(false)}
-      onAssistantInputChange={setAssistantInput}
-      onAssistantSubmit={handleAssistantSubmit}
+      onAssistantInputChange={setInput}
+      onAssistantSubmit={sendMessage}
+
       cartOpen={cartOpen}
       cartItems={cart.items}
       cartTotal={cart.total}
       onCartRemove={cart.removeItem}
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
+
       onCartClose={() => {
         if (window.history.length > 1) {
           navigate(-1);
@@ -119,6 +111,7 @@ export default function ProductPage() {
           navigate('/');
         }
       }}
+
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
       onCloseAuth={auth.close}

@@ -77,7 +77,7 @@ export default function ResetPassword() {
       assistantOpen={false}
       assistantMessages={[]}
       assistantInput={''}
-      assistantInputRef={React.createRef()}
+      assistantInputRef={React.createRef<HTMLInputElement>()}
       onAssistantClose={() => {}}
       onAssistantInputChange={() => {}}
       onAssistantSubmit={() => {}}

@@ -63,7 +63,7 @@ export default function ForgotPassword() {
       assistantOpen={false}
       assistantMessages={[]}
       assistantInput={''}
-      assistantInputRef={React.createRef()}
+      assistantInputRef={React.createRef<HTMLInputElement>()}
       onAssistantClose={() => {}}
       onAssistantInputChange={() => {}}
       onAssistantSubmit={() => {}}

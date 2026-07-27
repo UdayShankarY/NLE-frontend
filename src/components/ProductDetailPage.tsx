@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, MapPin, Zap, Lock, Palette } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, Zap, Lock, Palette } from 'lucide-react';
 import type { AdminProduct } from '../types';
 import { cn } from '../lib/utils';
 import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
@@ -192,8 +192,8 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           </div>
           <h1 className="mt-1 text-2xl font-extrabold text-ink md:text-3xl">{product.name}</h1>
 
-          <div className="mt-2 flex items-center gap-1.5 text-sm text-ink-muted">
-            <MapPin size={14} /> Bangalore
+          <div className="mt-2 text-sm text-ink-muted">
+            {product.categoryName}{product.subcategory ? ` · ${product.subcategory}` : ''}
           </div>
 
           <div className="mt-4 flex items-baseline gap-3">

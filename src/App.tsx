@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useState } from "react";
+import { useAI } from './context/AIContext';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { HeroSlider } from './components/HeroSlider';
 import { ProductSlider } from './components/ProductSlider';
@@ -6,7 +7,6 @@ import { SearchBar } from './components/SearchBar';
 import { CategoryGrid } from './components/CategoryGrid';
 import { SubcategoryScroll } from './components/SubcategoryScroll';
 import { EmptyState, LoadingState } from './components/EmptyState';
-import type { AssistantMessage } from './components/AssistantPanel';
 import { useLanguage } from './hooks/useLanguage';
 import { useAuth } from './hooks/useAuth';
 import { useProducts } from './hooks/useProducts';
@@ -44,11 +44,15 @@ export default function App() {
   const { grouped, categories, loading } = useProducts();
   const cart = useCart();
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [assistantMessages, setAssistantMessages] = useState<AssistantMessage[]>([
-    { id: 1, sender: 'bot', text: 'Hi! I can help with packages, availability, and decor ideas. What would you like to know?' },
-  ]);
-  const [assistantInput, setAssistantInput] = useState('');
-  const assistantInputRef = useRef<HTMLInputElement>(null);
+  
+  const {
+    messages,
+    input,
+    inputRef,
+    setInput, 
+    sendMessage,
+  } = useAI();
+    
   const activeCategory = params.category ? decodeURIComponent(params.category) : null;
   const activeSubcategory = params.subcategory ? decodeURIComponent(params.subcategory) : null;
   const search = new URLSearchParams(location.search).get('search') ?? '';
@@ -56,34 +60,11 @@ export default function App() {
   const openBooking = (product: AdminProduct) => {
     navigate(`/booking/${product._id}`);
   };
-  useEffect(() => {
-    if (assistantOpen) {
-      window.requestAnimationFrame(() => assistantInputRef.current?.focus());
-    }
-  }, [assistantOpen]);
 
-  const getAssistantReply = (message: string) => {
-    const text = message.toLowerCase();
-    if (text.includes('price') || text.includes('cost')) {
-      return 'Our packages vary by theme and guest count. Share your event type and number of guests and I will guide you to the best option.';
-    }
-    if (text.includes('book') || text.includes('availability') || text.includes('date')) {
-      return 'We can help check availability for your preferred date. Tell me your date and city and I will point you to the next step.';
-    }
-    return 'Thanks for reaching out! I can help with packages, availability, and decor ideas. Tell me a little more about your event.';
-  };
 
-  const handleAssistantSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = assistantInput.trim();
-    if (!trimmed) return;
+  
 
-    const userMessage: AssistantMessage = { id: Date.now(), sender: 'user', text: trimmed };
-    const botMessage: AssistantMessage = { id: Date.now() + 1, sender: 'bot', text: getAssistantReply(trimmed) };
-
-    setAssistantMessages(prev => [...prev, userMessage, botMessage]);
-    setAssistantInput('');
-  };
+  
 
   // Post-login handled centrally in MainLayout; pass no onLogin to avoid duplication
   const handleTermsPageOpen = (pageKey: 'terms' | 'privacy' | 'refund' | 'about') => {
@@ -172,7 +153,7 @@ export default function App() {
           );
         })()}
 
-        {(activeSubcategory || search || !activeCategory) && !showHome && (
+        {(activeSubcategory || search) && !showHome && (
           loading ? (
             <LoadingState label="Loading packages..." />
           ) : Object.keys(filteredGrouped).length === 0 ? (
@@ -204,23 +185,7 @@ export default function App() {
           )
         )}
 
-        {search && (
-          loading ? (
-            <LoadingState label="Searching..." />
-          ) : Object.keys(filteredGrouped).length === 0 ? (
-            <EmptyState
-              title={`No results for "${search}"`}
-              actionLabel="Clear search"
-              onAction={() => navigate(buildCatalogPath(activeCategory, activeSubcategory, ''))}
-            />
-          ) : (
-            <>
-              {Object.entries(filteredGrouped).map(([categoryName, products]) => (
-                <ProductSlider key={categoryName} title={categoryName} apiProducts={products} t={t} onViewDetails={handleViewDetails} onBook={openBooking} />
-              ))}
-            </>
-          )
-        )}
+      
       </>
     );
   })();
@@ -236,12 +201,12 @@ export default function App() {
       categories={categories}
       onSelectCategory={handleCatalogSelect}
       assistantOpen={assistantOpen}
-      assistantMessages={assistantMessages}
-      assistantInput={assistantInput}
-      assistantInputRef={assistantInputRef}
-      onAssistantClose={() => setAssistantOpen(false)}
-      onAssistantInputChange={setAssistantInput}
-      onAssistantSubmit={handleAssistantSubmit}
+      assistantMessages={messages}
+      assistantInput={input}
+      assistantInputRef={inputRef}
+      onAssistantClose={() => setAssistantOpen(false)} 
+      onAssistantInputChange={setInput}
+      onAssistantSubmit={sendMessage}
       cartOpen={cartOpen}
       cartItems={cart.items}
       cartTotal={cart.total}
