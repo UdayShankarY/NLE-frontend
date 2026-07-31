@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, Zap, Lock, Palette } from 'lucide-react';
 import type { AdminProduct } from '../types';
 import { cn } from '../lib/utils';
+import { BackButton } from './BackButton';
 import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
 
 interface Props {
@@ -111,7 +112,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
 
       {/* Breadcrumb */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
-        <button className="font-medium text-ink hover:text-brand-purple" onClick={onBack}>&#8592; Back</button>
+        <BackButton onClick={onBack} className="text-ink hover:text-brand-purple" />
         <span>/</span>
         <span>{product.categoryName}</span>
         {product.subcategory && (
@@ -209,20 +210,6 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           </div>
 
           {product.description && <p className="mt-4 text-sm leading-relaxed text-ink-muted">{product.description}</p>}
-
-          {product.inclusions?.length > 0 && (
-            <div className="mt-4 flex flex-col gap-2">
-              {product.inclusions.slice(0, 4).map((inc, i) => (
-                <div key={i} className="flex items-center gap-2 text-sm text-ink">
-                  <Check size={15} className="flex-shrink-0 text-emerald-600" />
-                  {inc}
-                </div>
-              ))}
-              {product.inclusions.length > 4 && (
-                <div className="text-xs text-ink-muted">+{product.inclusions.length - 4} more inclusions below</div>
-              )}
-            </div>
-          )}
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <BookButton onClick={() => {

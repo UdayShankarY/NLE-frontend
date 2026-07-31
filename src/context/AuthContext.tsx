@@ -1,5 +1,11 @@
 import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
 import type { AuthTab, AuthUser } from '../types';
+export interface AuthRedirect {
+  pathname: string;
+  search?: string;
+  hash?: string;
+  state?: unknown;
+}
 
 interface AuthState {
   isOpen: boolean;
@@ -9,6 +15,7 @@ interface AuthState {
   isAdmin: boolean;
   isLoading: boolean;
   initialized: boolean;
+  authRedirect: AuthRedirect | null;
 }
 
 interface AuthContextValue extends AuthState {
@@ -17,6 +24,8 @@ interface AuthContextValue extends AuthState {
   setTab: (tab: AuthTab) => void;
   login: (user: AuthUser, token?: string) => void;
   logout: () => void;
+  setAuthRedirect: (redirect: AuthRedirect) => void;
+  clearAuthRedirect: () => void;
 }
 
 const initialAuthState: AuthState = {
@@ -27,6 +36,7 @@ const initialAuthState: AuthState = {
   isAdmin: false,
   isLoading: true,
   initialized: false,
+  authRedirect: null,
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -51,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           isAdmin: user.role === 'admin',
           isLoading: false,
           initialized: true,
+          authRedirect: null,
         });
         return;
       }
@@ -67,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const close = useCallback(() => {
-    setState((s) => ({ ...s, isOpen: false }));
+    setState((s) => ({ ...s, isOpen: false, authRedirect: null }));
     document.body.style.overflow = '';
   }, []);
 
@@ -108,13 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isOpen: false,
       isLoading: false,
       initialized: true,
+      authRedirect: null,
     }));
     document.body.style.overflow = '';
   }, []);
 
+  const setAuthRedirect = useCallback((redirect: AuthRedirect) => {
+    setState((prev) => ({ ...prev, authRedirect: redirect }));
+  }, []);
+
+  const clearAuthRedirect = useCallback(() => {
+    setState((prev) => ({ ...prev, authRedirect: null }));
+  }, []);
+
   const value = useMemo(
-    () => ({ ...state, open, close, setTab, login, logout }),
-    [state, open, close, setTab, login, logout]
+    () => ({ ...state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect }),
+    [state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

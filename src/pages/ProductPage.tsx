@@ -9,6 +9,7 @@ import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import { trackViewItem } from '../lib/analytics';
+import { useAppBack } from '../hooks/useAppBack';
 
 export default function ProductPage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function ProductPage() {
   const { grouped, categories, loading } = useProducts();
 
   const cartOpen = location.pathname === '/cart';
+  const goBackToHome = useAppBack('/');
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   const {
@@ -51,6 +53,31 @@ export default function ProductPage() {
       .find((item) => item._id === id) || null;
   }, [grouped, id]);
 
+  const fallbackPath = typeof location.state?.from === 'string'
+    ? location.state.from
+    : product
+      ? `/category/${encodeURIComponent(product.categoryName)}${product.subcategory ? `/${encodeURIComponent(product.subcategory)}` : ''}`
+      : '/';
+  const goBack = useAppBack(fallbackPath);
+
+  const handleBook = (selectedProduct: typeof product) => {
+    if (!selectedProduct) return;
+    if (!auth.isLoggedIn) {
+      auth.setAuthRedirect({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        state: location.state,
+      });
+      auth.open('login');
+      return;
+    }
+
+    navigate(`/booking/${selectedProduct._id}`, {
+      state: { from: `${location.pathname}${location.search}` },
+    });
+  };
+
   useEffect(() => {
     if (product) {
       trackViewItem(
@@ -67,10 +94,8 @@ export default function ProductPage() {
   ) : product ? (
     <ProductDetailPage
       product={product}
-      onBack={() => navigate(-1)}
-      onBook={(selectedProduct) =>
-        navigate(`/booking/${selectedProduct._id}`)
-      }
+      onBack={goBack}
+      onBook={handleBook}
     />
   ) : (
     <div className="mx-auto max-w-[1400px] px-4 py-8 text-sm text-ink-muted">
@@ -105,18 +130,13 @@ export default function ProductPage() {
       onCartClear={cart.clearCart}
 
       onCartClose={() => {
-        if (window.history.length > 1) {
-          navigate(-1);
-        } else {
-          navigate('/');
-        }
+        goBackToHome();
       }}
 
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}
       onCloseAuth={auth.close}
       onSetAuthTab={auth.setTab}
-      onLogin={() => auth.open('login')}
       authModalOpen={auth.isOpen}
       authModalTab={auth.tab}
     >

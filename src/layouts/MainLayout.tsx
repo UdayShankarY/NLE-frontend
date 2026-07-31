@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -9,6 +9,7 @@ import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
 import type { AdminCategory, AuthTab, AuthUser, CartItem, Translations } from '../types';
 import type { AssistantMessage } from '../components/AssistantPanel';
+import type { AuthRedirect } from '../context/AuthContext';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -25,6 +26,8 @@ interface MainLayoutProps {
     tab: AuthTab;
     isLoading: boolean;
     initialized: boolean;
+    authRedirect: AuthRedirect | null;
+    clearAuthRedirect: () => void;
   };
   t: Record<string, string> | Translations;
   onAssistantOpen: () => void;
@@ -98,17 +101,44 @@ export default function MainLayout({
 }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const handledAuthRedirect = useRef(false);
 
   useEffect(() => {
-    if (!auth.initialized || !auth.isLoggedIn || auth.tab !== 'success') return;
+    if (!auth.initialized || !auth.isLoggedIn || auth.tab !== 'success') {
+      handledAuthRedirect.current = false;
+      return;
+    }
 
     if (location.pathname.startsWith('/admin')) return;
+
+    if (auth.authRedirect) {
+      const redirect = auth.authRedirect;
+      const targetSearch = redirect.search || '';
+      const targetHash = redirect.hash || '';
+      const targetMatches = location.pathname === redirect.pathname
+        && location.search === targetSearch
+        && location.hash === targetHash;
+
+      if (!targetMatches) {
+        navigate(
+          { pathname: redirect.pathname, search: redirect.search, hash: redirect.hash },
+          { replace: true, state: redirect.state }
+        );
+        return;
+      }
+
+      handledAuthRedirect.current = true;
+      auth.clearAuthRedirect();
+      return;
+    }
+
+    if (handledAuthRedirect.current) return;
 
     const redirectPath = auth.isAdmin ? '/admin' : '/';
     if (location.pathname !== redirectPath) {
       navigate(redirectPath, { replace: true });
     }
-  }, [auth.initialized, auth.isAdmin, auth.isLoggedIn, auth.tab, location.pathname, navigate]);
+  }, [auth.authRedirect, auth.clearAuthRedirect, auth.initialized, auth.isAdmin, auth.isLoggedIn, auth.tab, location.pathname, navigate]);
 
   const internalHandleLogin = (user: AuthUser, token?: string) => {
     try {

@@ -14,18 +14,27 @@ export const ProductCard: React.FC<{
   onViewDetails: (p: AdminProduct) => void;
   onBook?: (p: AdminProduct) => void;
   isAI?: boolean;
+  isLanding?: boolean;
 }> = ({
   product,
   onViewDetails,
   onBook,
   isAI = false,
+  isLanding = false,
 }) => {
   const [wished, setWished] = useState(false);
 
   return (
     <div
       data-card
-      className="w-full sm:w-[230px] cursor-pointer overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg"
+      className={cn(
+        isAI
+          ? 'w-full cursor-pointer overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg sm:w-[230px]'
+          : cn(
+              'flex h-full flex-shrink-0 cursor-pointer flex-col overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg',
+              isLanding ? 'w-[80vw] sm:w-[230px]' : 'w-full sm:w-[230px]'
+            )
+      )}
       onClick={() => onViewDetails(product)}
     >
       <div className="relative h-[180px] w-full overflow-hidden bg-gray-100 sm:h-[200px]">
@@ -60,7 +69,7 @@ export const ProductCard: React.FC<{
         )}
       </div>
 
-      <div className="p-3.5">
+      <div className={isAI ? 'p-3.5' : 'flex flex-1 flex-col p-3.5'}>
         <h3 className="line-clamp-2 text-sm font-semibold text-ink">
           {product.name}
         </h3>
@@ -84,7 +93,10 @@ export const ProductCard: React.FC<{
         </div>
 
         <button
-          className="mt-4 w-full rounded-lg bg-brand-purple py-2 text-sm font-semibold text-white transition hover:bg-brand-purple-dark"
+          className={cn(
+            isAI ? 'mt-4' : 'mt-auto',
+            'w-full rounded-lg bg-brand-purple py-2 text-sm font-semibold text-white transition hover:bg-brand-purple-dark'
+          )}
           onClick={(e) => {
             e.stopPropagation();
             onViewDetails(product);
@@ -117,13 +129,15 @@ interface ProductSliderProps {
   t: Translations;
   onViewDetails: (product: AdminProduct) => void;
   onBook: (product: AdminProduct) => void;
+  isLanding?: boolean;
 }
 
-export const ProductSlider: React.FC<ProductSliderProps> = ({ title, titleSpan, apiProducts = [], onViewDetails, onBook }) => {
+export const ProductSlider: React.FC<ProductSliderProps> = ({ title, titleSpan, apiProducts = [], onViewDetails, onBook, isLanding = false }) => {
   const trackRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const [showSwipeHint, setShowSwipeHint] = useState(isLanding);
 
   if (!apiProducts.length) return null;
 
@@ -133,22 +147,24 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({ title, titleSpan, 
     scrollLeft.current = trackRef.current?.scrollLeft || 0;
     if (trackRef.current) trackRef.current.style.cursor = 'grabbing';
   };
+
   const onMouseMove = (e: React.MouseEvent) => {
     if (!isDragging.current || !trackRef.current) return;
     e.preventDefault();
     const x = e.pageX - trackRef.current.offsetLeft;
     trackRef.current.scrollLeft = scrollLeft.current - (x - startX.current) * 1.2;
   };
+
   const onMouseUp = () => {
     isDragging.current = false;
     if (trackRef.current) trackRef.current.style.cursor = 'grab';
   };
 
-  const scroll = (dir: number) => {
+  const scroll = (direction: number) => {
     if (!trackRef.current) return;
     const card = trackRef.current.querySelector('[data-card]') as HTMLElement;
-    const cardW = card ? card.offsetWidth + 16 : 280;
-    trackRef.current.scrollBy({ left: dir * cardW * 2, behavior: 'smooth' });
+    const cardWidth = card ? card.offsetWidth + 16 : 280;
+    trackRef.current.scrollBy({ left: direction * cardWidth * 2, behavior: 'smooth' });
   };
 
   return (
@@ -158,34 +174,51 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({ title, titleSpan, 
           {title}
           {titleSpan && <span className="text-brand-purple"> {titleSpan}</span>}
         </h2>
+        {isLanding && showSwipeHint && (
+          <span className="text-xs font-medium text-ink-muted sm:hidden">Swipe <span aria-hidden="true">-&gt;</span></span>
+        )}
       </div>
       <div className="relative">
-        <button
-          onClick={() => scroll(-1)}
-          aria-label="Previous"
-          className="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
-        >
-          <ChevronLeft size={18} />
-        </button>
+        {isLanding && (
+          <button
+            onClick={() => scroll(-1)}
+            aria-label="Previous"
+            className="absolute -left-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
+          >
+            <ChevronLeft size={18} />
+          </button>
+        )}
         <div
-          className="flex cursor-grab gap-4 overflow-x-auto scroll-smooth pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           ref={trackRef}
-          onMouseDown={onMouseDown}
-          onMouseMove={onMouseMove}
-          onMouseUp={onMouseUp}
-          onMouseLeave={onMouseUp}
+          className={cn(
+            isLanding
+              ? 'flex cursor-grab gap-4 overflow-x-auto scroll-smooth pb-1 touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden snap-x snap-mandatory pr-[20vw] sm:pr-0'
+              : 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+          )}
+          onScroll={isLanding ? () => setShowSwipeHint(false) : undefined}
+          onMouseDown={isLanding ? onMouseDown : undefined}
+          onMouseMove={isLanding ? onMouseMove : undefined}
+          onMouseUp={isLanding ? onMouseUp : undefined}
+          onMouseLeave={isLanding ? onMouseUp : undefined}
         >
           {apiProducts.map(product => (
-            <ProductCard key={product._id} product={product} onViewDetails={onViewDetails} onBook={onBook} />
+            <div key={product._id} className={isLanding ? 'flex-shrink-0 snap-start' : undefined}>
+              <ProductCard product={product} onViewDetails={onViewDetails} onBook={onBook} isLanding={isLanding} />
+            </div>
           ))}
         </div>
-        <button
-          onClick={() => scroll(1)}
-          aria-label="Next"
-          className="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
-        >
-          <ChevronRight size={18} />
-        </button>
+        {isLanding && (
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-10 bg-gradient-to-l from-white via-white/75 to-transparent sm:hidden" aria-hidden="true" />
+        )}
+        {isLanding && (
+          <button
+            onClick={() => scroll(1)}
+            aria-label="Next"
+            className="absolute -right-3 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
+          >
+            <ChevronRight size={18} />
+          </button>
+        )}
       </div>
     </section>
   );

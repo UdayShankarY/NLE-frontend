@@ -10,6 +10,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import type { AdminProduct, BookingDetails } from '../types';
 import { trackBookingStarted } from '../lib/analytics';
+import { useAppBack } from '../hooks/useAppBack';
 
 export default function BookingRoutePage() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function BookingRoutePage() {
   const { grouped, categories, loading } = useProducts();
 
   const cartOpen = location.pathname === '/cart';
+  const goBackToHome = useAppBack('/');
   const [assistantOpen, setAssistantOpen] = useState(false);
   const {
   messages,
@@ -46,6 +48,10 @@ export default function BookingRoutePage() {
     return Object.values(grouped).flat().find(item => item._id === id) || null;
   }, [grouped, id]);
 
+  const goBack = useAppBack(
+    typeof location.state?.from === 'string' ? location.state.from : `/product/${id}`
+  );
+
   useEffect(() => {
     if (product) {
       trackBookingStarted();
@@ -69,7 +75,7 @@ export default function BookingRoutePage() {
     <BookingForm
       product={product}
       preferredMethod="razorpay"
-      onBack={() => navigate(-1)}
+      onBack={goBack}
       onConfirm={handleBookingConfirm}
     />
   ) : (
@@ -100,11 +106,7 @@ export default function BookingRoutePage() {
       onCartUpdateQty={cart.updateQty}
       onCartClear={cart.clearCart}
       onCartClose={() => {
-        if (window.history.length > 1) {
-          navigate(-1);
-        } else {
-          navigate('/');
-        }
+        goBackToHome();
       }}
       onCartLoginClick={() => auth.open('login')}
       onTermsPageOpen={handleTermsPageOpen}

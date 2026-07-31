@@ -7,6 +7,7 @@ import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
+import { ScrollToTop } from '../components/ScrollToTop';
 import { trackPageView, trackSearch, trackViewCategory } from '../lib/analytics';
 
 function RouteAnalytics() {
@@ -37,6 +38,7 @@ export default function AppRoutes() {
   return (
     <>
       <RouteAnalytics />
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/category/:category" element={<App />} />

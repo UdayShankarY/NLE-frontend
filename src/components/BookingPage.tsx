@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { BackButton } from './BackButton';
 import type { AdminProduct, BookingDetails } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
@@ -141,13 +141,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   return (
     <div className="mx-auto max-w-[1200px] px-4 py-6 md:px-6">
       <div className="mb-6 flex items-start gap-4">
-        <button
+        <BackButton
           type="button"
-          className="mt-1 flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink"
+          className="mt-1"
           onClick={onBack}
-        >
-          <ArrowLeft size={16} /> Back
-        </button>
+        />
         <div>
           <div className="text-xs font-bold uppercase tracking-wide text-brand-purple">Booking Details</div>
           <h1 className="mt-1 text-xl font-extrabold text-ink md:text-2xl">Book {product.name}</h1>

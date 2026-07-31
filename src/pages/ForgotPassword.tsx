@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { BackButton } from '../components/BackButton';
+import { useAppBack } from '../hooks/useAppBack';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
-import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import { getApiUrl } from '../lib/api';
 
@@ -14,7 +14,6 @@ export default function ForgotPassword() {
   const auth = useAuth();
   const cart = useCart();
   const { categories } = useProducts();
-  const { t } = useLanguage();
 
   const cartOpen = location.pathname === '/cart';
 
@@ -45,10 +44,7 @@ export default function ForgotPassword() {
     }
   };
 
-  const goBack = () => {
-    if (window.history.length > 1) navigate(-1);
-    else navigate('/');
-  };
+  const goBack = useAppBack('/');
 
   return (
     <MainLayout
@@ -84,16 +80,14 @@ export default function ForgotPassword() {
       <div className="sticky top-0 z-20 bg-white border-b">
         <div className="max-w-md mx-auto px-4">
           <div className="flex items-center h-12">
-            <button
+            <BackButton
               onClick={goBack}
               aria-label="Back"
-              className="-ml-2 flex h-11 w-11 items-center justify-center rounded-full p-2 text-ink-muted hover:bg-black/5"
-              style={{ minWidth: 44, minHeight: 44 }}
-            >
-              <ArrowLeft size={20} />
-            </button>
+              iconOnly
+              className="-ml-2 p-2"
+            />
             <div className="flex-1 text-center text-lg font-semibold">Reset your password</div>
-            <div style={{ width: 44 }} />
+            <div className="w-11" />
           </div>
         </div>
       </div>

@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useCart } from '../hooks/useCart';
 import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
+import { useAppBack } from '../hooks/useAppBack';
 
 const ROUTE_TO_PAGEKEY = {
   '/terms': 'terms',
@@ -25,6 +26,7 @@ export default function TermsPage() {
   const { categories } = useProducts();
 
   const cartOpen = location.pathname === '/cart';
+  const goBackToHome = useAppBack('/');
   const [assistantOpen, setAssistantOpen] = useState(false);
 
   const {
@@ -67,11 +69,7 @@ export default function TermsPage() {
       onCartClear={cart.clearCart}
 
       onCartClose={() => {
-        if (window.history.length > 1) {
-          navigate(-1);
-        } else {
-          navigate('/');
-        }
+        goBackToHome();
       }}
 
       onCartLoginClick={() => auth.open('login')}
@@ -83,7 +81,7 @@ export default function TermsPage() {
     >
       <TermsContent
         pageKey={pageKey}
-        onClose={() => navigate(-1)}
+        onClose={goBackToHome}
       />
     </MainLayout>
   );

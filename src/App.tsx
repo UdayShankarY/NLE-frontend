@@ -11,6 +11,7 @@ import { useLanguage } from './hooks/useLanguage';
 import { useAuth } from './hooks/useAuth';
 import { useProducts } from './hooks/useProducts';
 import { useCart } from './hooks/useCart';
+import { useAppBack } from './hooks/useAppBack';
 import MainLayout from './layouts/MainLayout';
 import type { AdminProduct } from './types';
 
@@ -57,8 +58,24 @@ export default function App() {
   const activeSubcategory = params.subcategory ? decodeURIComponent(params.subcategory) : null;
   const search = new URLSearchParams(location.search).get('search') ?? '';
   const cartOpen = location.pathname === '/cart';
+  const goBackToHome = useAppBack('/');
+  const goBackToCatalogParent = useAppBack(
+    activeSubcategory ? buildCatalogPath(activeCategory, null, search) : '/'
+  );
   const openBooking = (product: AdminProduct) => {
-    navigate(`/booking/${product._id}`);
+    if (!auth.isLoggedIn) {
+      auth.setAuthRedirect({
+        pathname: `/product/${product._id}`,
+        state: {
+          from: `${location.pathname}${location.search}${location.hash}`,
+          sourceState: location.state,
+        },
+      });
+      auth.open('login');
+      return;
+    }
+
+    navigate(`/booking/${product._id}`, { state: { from: `${location.pathname}${location.search}` } });
   };
 
 
@@ -99,15 +116,11 @@ export default function App() {
   };
 
   const handleCartClose = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
+    goBackToHome();
   };
 
   const handleViewDetails = (product: AdminProduct) => {
-    navigate(`/product/${product._id}`);
+    navigate(`/product/${product._id}`, { state: { from: `${location.pathname}${location.search}` } });
   };
 
   const pageContent = (() => {
@@ -134,6 +147,7 @@ export default function App() {
             t={t}
             onViewDetails={handleViewDetails}
             onBook={openBooking}
+            isLanding
           />
         ))}
 
@@ -146,7 +160,7 @@ export default function App() {
             <SubcategoryScroll
               categoryName={activeCategory}
               subcategories={subs}
-              onBack={() => navigate(buildCatalogPath(activeCategory, null, search))}
+              onBack={goBackToCatalogParent}
               onSelectSubcategory={name => navigate(buildCatalogPath(activeCategory, name, ''))}
               onViewAll={() => navigate(buildCatalogPath(activeCategory, null, ''))}
             />
