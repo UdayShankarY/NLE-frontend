@@ -7,6 +7,7 @@ import { AssistantPanel } from '../components/AssistantPanel';
 import { CartPage } from '../components/CartPage';
 import { Footer } from '../components/Footer';
 import { Header } from '../components/Header';
+import { FloatingActionMenu } from '../components/FloatingActionMenu';
 import type { AdminCategory, AuthTab, AuthUser, CartItem, Translations } from '../types';
 import type { AssistantMessage } from '../components/AssistantPanel';
 import type { AuthRedirect } from '../context/AuthContext';
@@ -28,6 +29,7 @@ interface MainLayoutProps {
     initialized: boolean;
     authRedirect: AuthRedirect | null;
     clearAuthRedirect: () => void;
+    updateUser: (user: AuthUser) => void;
   };
   t: Record<string, string> | Translations;
   onAssistantOpen: () => void;
@@ -109,7 +111,7 @@ export default function MainLayout({
       return;
     }
 
-    if (location.pathname.startsWith('/admin')) return;
+    if (location.pathname.startsWith('/admin') || location.pathname === '/profile') return;
 
     if (auth.authRedirect) {
       const redirect = auth.authRedirect;
@@ -156,6 +158,7 @@ export default function MainLayout({
         <>
           <Header
             auth={auth}
+            t={t as Translations}
             onLogoClick={onLogoClick}
             onAssistantOpen={onAssistantOpen}
             showAssistantButton={showAssistantButton}
@@ -174,7 +177,7 @@ export default function MainLayout({
             onSubmit={onAssistantSubmit}
             inputRef={assistantInputRef}
           />
-          {WA_FAB}
+          <FloatingActionMenu onAssistantOpen={onAssistantOpen} />
           {cartOpen && (
             <CartPage
               items={cartItems}

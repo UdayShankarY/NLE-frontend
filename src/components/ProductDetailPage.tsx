@@ -4,6 +4,7 @@ import type { AdminProduct } from '../types';
 import { cn } from '../lib/utils';
 import { BackButton } from './BackButton';
 import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface Props {
   product: AdminProduct;
@@ -73,6 +74,7 @@ const WhatsAppButton: React.FC<{ onClick?: () => void; href?: string; className?
 };
 
 export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) => {
+  const { t } = useLanguage();
   const allImages = [product.image, ...(product.moreImages || [])];
   const [activeIdx, setActiveIdx] = useState(0);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -112,7 +114,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
 
       {/* Breadcrumb */}
       <div className="mb-4 flex flex-wrap items-center gap-1.5 text-sm text-ink-muted">
-        <BackButton onClick={onBack} className="text-ink hover:text-brand-purple" />
+        <BackButton onClick={onBack} className="text-ink hover:text-brand-purple">{t.back || 'Back'}</BackButton>
         <span>/</span>
         <span>{product.categoryName}</span>
         {product.subcategory && (
@@ -239,7 +241,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           <div>
             <div className="mb-4 flex items-center gap-2">
               <span className="text-xl">✅</span>
-              <h2 className="text-lg font-bold text-ink">What&apos;s Included</h2>
+              <h2 className="text-lg font-bold text-ink">{t.whats_included || "What's Included"}</h2>
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {product.inclusions.map((inc, i) => (
@@ -256,7 +258,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           <div>
             <div className="mb-4 flex items-center gap-2">
               <span className="text-xl">✨</span>
-              <h2 className="text-lg font-bold text-ink">Available Add-Ons</h2>
+              <h2 className="text-lg font-bold text-ink">{t.available_addons || 'Available Add-Ons'}</h2>
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {product.addOns.map((a, i) => (
@@ -273,7 +275,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
         <div>
           <div className="mb-4 flex items-center gap-2">
             <span className="text-xl">🚀</span>
-            <h2 className="text-lg font-bold text-ink">How It Works</h2>
+            <h2 className="text-lg font-bold text-ink">{t.how_it_works || 'How It Works'}</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {HOW_IT_WORKS.map((step, i) => (

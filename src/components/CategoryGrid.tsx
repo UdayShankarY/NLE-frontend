@@ -1,14 +1,18 @@
 import React from 'react';
 import type { AdminCategory } from '../types';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface CategoryGridProps {
   categories: AdminCategory[];
   onSelect: (categoryName: string) => void;
 }
 
-export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, onSelect }) => (
+export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, onSelect }) => {
+  const { t } = useLanguage();
+
+  return (
   <section className="mx-auto max-w-[1400px] px-4 py-6 md:px-6">
-    <h2 className="mb-4 text-lg font-bold text-ink md:text-xl">Explore Our Categories</h2>
+    <h2 className="mb-4 text-lg font-bold text-ink md:text-xl">{t.categories_title || 'Explore Our Categories'}</h2>
     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 md:grid-cols-5 lg:grid-cols-6">
       {categories.map(cat => (
         <div
@@ -28,4 +32,5 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({ categories, onSelect
       ))}
     </div>
   </section>
-);
+  );
+};

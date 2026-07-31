@@ -128,7 +128,7 @@ export default function App() {
 
     return (
       <>
-        <SearchBar value={search} onChange={handleSearchChange} />
+        <SearchBar value={search} onChange={handleSearchChange} placeholder={t.search_placeholder} />
 
         {showHome && <HeroSlider />}
 

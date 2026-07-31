@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import type { AdminProduct, Translations } from '../types';
 import { cn } from '../lib/utils';
+import { useLanguage } from '../hooks/useLanguage';
 
 const badgeColorClass: Record<string, string> = {
   purple: 'bg-brand-purple text-white',
@@ -23,6 +24,7 @@ export const ProductCard: React.FC<{
   isLanding = false,
 }) => {
   const [wished, setWished] = useState(false);
+  const { t } = useLanguage();
 
   return (
     <div
@@ -82,9 +84,21 @@ export const ProductCard: React.FC<{
 
         <div className="mt-3">
           {product.price > 0 ? (
-            <span className="text-base font-bold text-ink">
-              ₹{product.price.toLocaleString()}
-            </span>
+            <div className="flex flex-wrap items-baseline gap-2">
+              {product.originalPrice && product.originalPrice > product.price && (
+                <span className="text-xs text-ink-muted line-through">
+                  ₹{product.originalPrice.toLocaleString()}
+                </span>
+              )}
+              <span className="text-base font-bold text-brand-purple">
+                ₹{product.price.toLocaleString()}
+              </span>
+              {product.originalPrice && product.originalPrice > product.price && (
+                <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                  {Math.round((1 - product.price / product.originalPrice) * 100)}% OFF
+                </span>
+              )}
+            </div>
           ) : (
             <span className="text-sm font-semibold text-ink-muted">
               Price on request
@@ -102,7 +116,7 @@ export const ProductCard: React.FC<{
             onViewDetails(product);
           }}
         >
-          View Details
+          {t.view_details || 'View Details'}
         </button>
 
         {!isAI && onBook && (
@@ -113,7 +127,7 @@ export const ProductCard: React.FC<{
               onBook(product);
             }}
           >
-            Book Now
+            {t.book_now || 'Book Now'}
           </button>
         )}
       </div>

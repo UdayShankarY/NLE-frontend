@@ -370,7 +370,7 @@ const RegisterForm: React.FC<{
       const res = await fetch(getApiUrl('/api/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firstName: first, lastName: last, email, password: pass })
+        body: JSON.stringify({ firstName: first, lastName: last, email, password: pass, phone })
       });
       const data = await parseJsonResponse<{ msg?: string; message?: string }>(res);
       if (!res.ok) {

@@ -34,7 +34,7 @@ export interface NavCategory {
   label: string;
 }
 
-export type LangCode = 'en' | 'kn' | 'te' | 'hi' | 'ta' | 'ml';
+export type LangCode = 'en' | 'kn' | 'te' | 'ta';
 
 export interface Language {
   code: LangCode;
@@ -112,9 +112,27 @@ export interface Translations {
   gift_choc: string; gift_photo: string; gift_cards: string;
   footer_about: string; footer_blog: string; footer_careers: string;
   footer_contact: string; footer_partner: string; footer_privacy: string;
+  theme_label?: string;
+  sign_out?: string;
+  profile?: string;
+  my_bookings?: string;
+  light_mode?: string;
+  dark_mode?: string;
+  view_details?: string;
+  categories_title?: string;
+  back?: string;
+  no_subcategories?: string;
+  view_all_packages?: string;
+  whats_included?: string;
+  available_addons?: string;
+  booking_details?: string;
+  how_it_works?: string;
+  ask_assistant?: string;
+  ai_assistant?: string;
+  language_preferences?: string;
 }
 
-export type TranslationsMap = Record<LangCode, Translations>;
+export type TranslationsMap = Record<string, Translations>;
 
 export interface AuthUser {
   id: string;
@@ -123,6 +141,14 @@ export interface AuthUser {
   email: string;
   role: 'user' | 'admin';  // Set in MongoDB — admin sees different UI
   phone?: string;
+  photoURL?: string;
+  gender?: string;
+  dateOfBirth?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  pincode?: string;
   createdAt?: string;
 }
 

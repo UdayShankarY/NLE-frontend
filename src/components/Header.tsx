@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { ChevronDown, LogIn, Menu } from 'lucide-react';
-import type { AdminCategory, AuthTab, AuthUser } from '../types';
+import React, { useEffect, useRef, useState } from 'react';
+import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import type { AdminCategory, AuthTab, AuthUser, Translations } from '../types';
 import { AssistantTrigger } from './AssistantPanel';
 import { cn } from '../lib/utils';
 
@@ -65,6 +66,7 @@ interface AuthSlice {
 
 export interface HeaderProps {
   auth: AuthSlice;
+  t: Translations;
   onLogoClick: () => void;
   /** Home page shows an assistant shortcut inline next to the account button. */
   showAssistantButton?: boolean;
@@ -75,6 +77,13 @@ export interface HeaderProps {
   onSelectCategory?: (catName: string, subName?: string) => void;
 }
 
+const avatarColors = ['bg-brand-purple', 'bg-pink-600', 'bg-emerald-600', 'bg-sky-600', 'bg-amber-600'];
+
+function getAvatarColor(value: string) {
+  const hash = Array.from(value).reduce((total, character) => total + character.charCodeAt(0), 0);
+  return avatarColors[hash % avatarColors.length];
+}
+
 /**
  * Site header. Previously duplicated verbatim across three branches of App.tsx
  * (home / product detail / booking) as `.nh` markup — now one component
@@ -83,6 +92,7 @@ export interface HeaderProps {
  */
 export const Header: React.FC<HeaderProps> = ({
   auth,
+  t,
   onLogoClick,
   showAssistantButton = false,
   showMobileMenu = false,
@@ -91,26 +101,84 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectCategory,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const accountRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', darkMode);
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (accountRef.current && !accountRef.current.contains(event.target as Node)) setAccountOpen(false);
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setAccountOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, []);
 
   const userButton = auth.isLoggedIn ? (
-    <div className="relative group">
-      <button className="flex items-center gap-2 rounded-full border border-border py-1 pl-1 pr-3 hover:border-brand-purple-light">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple text-sm font-bold text-white">
-          {auth.user?.firstName?.[0]?.toUpperCase()}
-        </span>
+    <div ref={accountRef} className="relative">
+      <button
+        type="button"
+        aria-expanded={accountOpen}
+        aria-haspopup="menu"
+        className={cn('flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors', darkMode ? 'border-slate-700 bg-slate-900 text-white hover:border-brand-purple-light' : 'border-border bg-white hover:border-brand-purple-light')}
+        onClick={() => setAccountOpen(open => !open)}
+      >
+        {auth.user?.photoURL ? (
+          <img src={auth.user.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
+        ) : (
+          <span className={cn('flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white', getAvatarColor(`${auth.user?.firstName ?? ''}${auth.user?.email ?? ''}`))}>
+            {auth.user?.firstName?.[0]?.toUpperCase() || auth.user?.email?.[0]?.toUpperCase()}
+          </span>
+        )}
         <span className="hidden flex-col items-start leading-tight sm:flex">
-          <span className="text-xs font-semibold text-ink">Hello, {auth.user?.firstName}</span>
-          <span className="text-[11px] text-ink-muted">Account &amp; Orders</span>
+          <span className={cn('text-xs font-semibold', darkMode ? 'text-white' : 'text-ink')}>Hello, {auth.user?.firstName}</span>
+          <span className={darkMode ? 'text-[11px] text-slate-300' : 'text-[11px] text-ink-muted'}>{t.mob_acc_title}</span>
         </span>
-        <ChevronDown size={12} className="text-ink-muted" />
+        <ChevronDown size={12} className={cn('transition-transform', accountOpen && 'rotate-180', darkMode ? 'text-slate-300' : 'text-ink-muted')} />
       </button>
-      <div className="invisible absolute right-0 top-full z-50 mt-1 min-w-[140px] rounded-lg border border-border bg-white py-1.5 opacity-0 shadow-lg transition-opacity group-hover:visible group-hover:opacity-100">
-        <button
-          className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-brand-purple/5"
-          onClick={auth.logout}
-        >
-          Sign out
-        </button>
+      <div className={cn('absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right rounded-xl border p-2 shadow-xl transition-all duration-200', accountOpen ? 'visible translate-y-0 scale-100 opacity-100' : 'invisible -translate-y-1 scale-95 opacity-0', darkMode ? 'border-slate-700 bg-slate-900 text-white' : 'border-border bg-white text-ink')} role="menu">
+        <div className="flex items-center gap-3 border-b border-current/10 px-3 py-3">
+          {auth.user?.photoURL ? (
+            <img src={auth.user.photoURL} alt="" className="h-11 w-11 flex-shrink-0 rounded-full object-cover" />
+          ) : (
+            <span className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold text-white', getAvatarColor(`${auth.user?.firstName ?? ''}${auth.user?.email ?? ''}`))}>
+              {auth.user?.firstName?.[0]?.toUpperCase() || auth.user?.email?.[0]?.toUpperCase()}
+            </span>
+          )}
+          <div className="min-w-0">
+            <div className="truncate text-sm font-semibold">{[auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ')}</div>
+            <div className={cn('truncate text-xs', darkMode ? 'text-slate-300' : 'text-ink-muted')}>{auth.user?.email}</div>
+          </div>
+        </div>
+        <div className="py-2">
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/profile'); }}>
+            <User size={17} /> {t.profile || 'Profile'}
+          </button>
+          <div className="mt-1 border-t border-current/10 px-3 pt-2">
+            <div className="mb-2 flex items-center gap-3 text-sm"><Moon size={17} /> {t.theme_label || 'Theme'}</div>
+            <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10">
+              <button className={cn('flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs', !darkMode && 'bg-white font-semibold shadow-sm')} onClick={() => setDarkMode(false)}><Sun size={14} /> {t.light_mode || 'Light'}</button>
+              <button className={cn('flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs', darkMode && 'bg-slate-700 font-semibold')} onClick={() => setDarkMode(true)}><Moon size={14} /> {t.dark_mode || 'Dark'}</button>
+            </div>
+          </div>
+        </div>
+        <div className="border-t border-current/10 pt-2">
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" onClick={() => { auth.logout(); setAccountOpen(false); navigate('/'); }}>
+            <LogOut size={17} /> {t.sign_out || 'Sign Out'}
+          </button>
+        </div>
       </div>
     </div>
   ) : (

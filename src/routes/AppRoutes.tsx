@@ -7,6 +7,7 @@ import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
+import ProfilePage from '../pages/ProfilePage';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { trackPageView, trackSearch, trackViewCategory } from '../lib/analytics';
 
@@ -52,6 +53,7 @@ export default function AppRoutes() {
         <Route path="/about" element={<TermsPageRoute />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/dashboard" element={<AdminPage />} />
         <Route path="/admin/products" element={<AdminPage />} />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { EmptyState } from './EmptyState';
 import { BackButton } from './BackButton';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface SubcategoryScrollProps {
   categoryName: string;
@@ -16,19 +17,20 @@ export const SubcategoryScroll: React.FC<SubcategoryScrollProps> = ({
   onBack,
   onSelectSubcategory,
   onViewAll,
-}) => (
+}) => {
+  const { t } = useLanguage();
+
+  return (
   <section className="mx-auto max-w-[1400px] px-4 py-6 md:px-6">
     <div className="mb-4 flex items-center gap-3">
-      <BackButton
-        onClick={onBack}
-      />
+      <BackButton onClick={onBack}>{t.back || 'Back'}</BackButton>
       <h2 className="text-lg font-bold text-ink md:text-xl">{categoryName}</h2>
     </div>
 
     {subcategories.length === 0 ? (
       <EmptyState
-        title="No subcategories yet"
-        actionLabel="View All Packages"
+        title={t.no_subcategories || 'No subcategories yet'}
+        actionLabel={t.view_all_packages || 'View All Packages'}
         onAction={onViewAll}
       />
     ) : (
@@ -48,4 +50,5 @@ export const SubcategoryScroll: React.FC<SubcategoryScrollProps> = ({
       </div>
     )}
   </section>
-);
+  );
+};

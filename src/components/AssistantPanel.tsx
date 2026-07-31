@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { AdminProduct } from '../types';
 import { ProductCard } from './ProductSlider';
+import { useLanguage } from '../hooks/useLanguage';
 import { Bot, X, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -42,6 +43,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   onSubmit,
   inputRef,
 }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const productTrackRef = useRef<HTMLDivElement>(null);
 
@@ -107,15 +109,15 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       )}
       role="dialog"
       aria-modal="true"
-      aria-label="AI Assistant"
+      aria-label={t.ai_assistant || 'AI Assistant'}
     >
       <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 pb-4 pt-5">
         <div>
           <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-purple">
-            AI Assistant
+            {t.ai_assistant || 'AI Assistant'}
           </p>
           <h3 className="text-base font-semibold text-gray-900">
-            How can we help?
+            {t.ask_assistant || 'How can we help?'}
           </h3>
         </div>
 
@@ -259,7 +261,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
             type="text"
             value={inputValue}
             onChange={(e) => onInputChange(e.target.value)}
-            placeholder="Ask me about decorations..."
+            placeholder={t.ask_assistant || 'Ask me about decorations...'}
             autoComplete="off"
             className="flex-1 rounded-full border border-border px-3.5 py-2.5 text-sm outline-none focus:border-brand-purple-light focus:ring-2 focus:ring-brand-purple-light/25"
           />

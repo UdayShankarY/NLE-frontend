@@ -4,9 +4,7 @@ export const LANGS: Language[] = [
   { code: 'en', label: 'English',  short: 'EN', flag: '🇬🇧' },
   { code: 'kn', label: 'ಕನ್ನಡ',   short: 'ಕ',  flag: '🏳️' },
   { code: 'te', label: 'తెలుగు',  short: 'తె', flag: '🏳️' },
-  { code: 'hi', label: 'हिंदी',   short: 'हि', flag: '🇮🇳' },
   { code: 'ta', label: 'தமிழ்',   short: 'த',  flag: '🏳️' },
-  { code: 'ml', label: 'മലയാളം', short: 'മ',  flag: '🏳️' },
 ];
 
 export const TRANSLATIONS: TranslationsMap = {
@@ -16,6 +14,7 @@ export const TRANSLATIONS: TranslationsMap = {
     city: 'Bengaluru', help: 'Help', login: 'Login', cart: '🛒 Cart',
     login_signup: 'Login / Sign Up', help_center: 'Help Center',
     mob_cat_title: 'Categories', mob_acc_title: 'Account',
+    theme_label: 'Theme', sign_out: 'Sign Out', profile: 'Profile', my_bookings: 'My Bookings', light_mode: 'Light', dark_mode: 'Dark', view_details: 'View Details', categories_title: 'Explore Our Categories', back: 'Back', no_subcategories: 'No subcategories yet', view_all_packages: 'View All Packages', whats_included: "What's Included", available_addons: 'Available Add-Ons', booking_details: 'Booking Details', how_it_works: 'How It Works', ask_assistant: 'Ask me about decorations...', ai_assistant: 'AI Assistant', language_preferences: 'Language Preferences',
     cat_anniversary: 'Anniversary', cat_birthdays: 'Birthdays', cat_gifts: 'Gifts',
     cat_dinners: 'Candlelight Dinners', cat_decorations: 'Decorations', cat_festivals: 'Festivals',
     cat_baby: 'Baby Shower', cat_kids: "Kids' Celebrations", cat_proposal: 'Proposal',
@@ -60,6 +59,7 @@ export const TRANSLATIONS: TranslationsMap = {
     city:'ಬೆಂಗಳೂರು', help:'ಸಹಾಯ', login:'ಲಾಗಿನ್', cart:'🛒 ಕಾರ್ಟ್',
     login_signup:'ಲಾಗಿನ್ / ಸೈನ್ ಅಪ್', help_center:'ಸಹಾಯ ಕೇಂದ್ರ',
     mob_cat_title:'ವರ್ಗಗಳು', mob_acc_title:'ಖಾತೆ',
+    theme_label:'ಥೀಮ್', sign_out:'ಸೈನ್ ಔಟ್', profile:'ಪ್ರೊಫೈಲ್', my_bookings:'ನನ್ನ ಬುಕಿಂಗ್‌ಗಳು', light_mode:'ಲೈಟ್', dark_mode:'ಡಾರ್ಕ್', view_details:'ವಿವರಗಳನ್ನು ನೋಡಿ', categories_title:'ನಮ್ಮ ವರ್ಗಗಳನ್ನು ಅನ್ವೇಷಿಸಿ', back:'ಹಿಂದೆ', no_subcategories:'ಇನ್ನೂ ಉಪವರ್ಗಗಳಿಲ್ಲ', view_all_packages:'ಎಲ್ಲಾ ಪ್ಯಾಕೇಜ್‌ಗಳನ್ನು ನೋಡಿ', whats_included:'ಏನು ಒಳಗೊಂಡಿದೆ', available_addons:'ಲಭ್ಯವಿರುವ ಆಡ್-ಆನ್‌ಗಳು', booking_details:'ಬುಕಿಂಗ್ ವಿವರಗಳು', how_it_works:'ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ', ask_assistant:'ಅಲಂಕಾರಗಳ ಬಗ್ಗೆ ಕೇಳಿ...', ai_assistant:'AI ಸಹಾಯಕ', language_preferences:'ಭಾಷಾ ಆದ್ಯತೆಗಳು',
     cat_anniversary:'ವಾರ್ಷಿಕೋತ್ಸವ', cat_birthdays:'ಹುಟ್ಟುಹಬ್ಬ', cat_gifts:'ಉಡುಗೊರೆಗಳು',
     cat_dinners:'ಕ್ಯಾಂಡಲ್‌ಲೈಟ್ ಡಿನ್ನರ್', cat_decorations:'ಅಲಂಕಾರ', cat_festivals:'ಹಬ್ಬ',
     cat_baby:'ಬೇಬಿ ಶವರ್', cat_kids:'ಮಕ್ಕಳ ಆಚರಣೆ', cat_proposal:'ಪ್ರಸ್ತಾವ',
@@ -104,6 +104,7 @@ export const TRANSLATIONS: TranslationsMap = {
     city:'బెంగళూరు', help:'సహాయం', login:'లాగిన్', cart:'🛒 కార్ట్',
     login_signup:'లాగిన్ / సైన్ అప్', help_center:'సహాయ కేంద్రం',
     mob_cat_title:'వర్గాలు', mob_acc_title:'ఖాతా',
+    theme_label:'థీమ్', sign_out:'సైన్ అవుట్', profile:'ప్రొఫైల్', my_bookings:'నా బుకింగ్‌లు', light_mode:'లైట్', dark_mode:'డార్క్', view_details:'వివరాలు చూడండి', categories_title:'మా వర్గాలను అన్వేషించండి', back:'వెనుకకు', no_subcategories:'ఇంకా ఉపవర్గాలు లేవు', view_all_packages:'అన్ని ప్యాకేజీలను చూడండి', whats_included:'ఏమి చేర్చబడింది', available_addons:'అందుబాటులో ఉన్న యాడ్-ఆన్స్', booking_details:'బుకింగ్ వివరాలు', how_it_works:'ఇది ఎలా పనిచేస్తుంది', ask_assistant:'అలంకరణల గురించి అడగండి...', ai_assistant:'AI సహాయకుడు', language_preferences:'భాషా ప్రాధాన్యతలు',
     cat_anniversary:'వార్షికోత్సవం', cat_birthdays:'పుట్టినరోజులు', cat_gifts:'బహుమతులు',
     cat_dinners:'క్యాండిల్‌లైట్ డిన్నర్', cat_decorations:'అలంకరణ', cat_festivals:'పండుగలు',
     cat_baby:'బేబీ షవర్', cat_kids:'పిల్లల వేడుకలు', cat_proposal:'ప్రపోజల్',
@@ -188,6 +189,7 @@ export const TRANSLATIONS: TranslationsMap = {
     city:'பெங்களூரு', help:'உதவி', login:'உள்நுழைய', cart:'🛒 கார்ட்',
     login_signup:'உள்நுழைய / பதிவு', help_center:'உதவி மையம்',
     mob_cat_title:'வகைகள்', mob_acc_title:'கணக்கு',
+    theme_label:'தீம்', sign_out:'வெளியேறு', profile:'சுயவிவரம்', my_bookings:'என் முன்பதிவுகள்', light_mode:'லைட்', dark_mode:'டார்க்', view_details:'விவரங்களைப் பார்க்கவும்', categories_title:'எங்கள் வகைகளை ஆராயுங்கள்', back:'பின்', no_subcategories:'துணை வகைகள் இன்னும் இல்லை', view_all_packages:'அனைத்து தொகுப்புகளையும் காண்க', whats_included:'என்ன சேர்க்கப்பட்டுள்ளது', available_addons:'கிடைக்கும் கூடுதல் விருப்பங்கள்', booking_details:'முன்பதிவு விவரங்கள்', how_it_works:'இது எப்படி வேலை செய்கிறது', ask_assistant:'அலங்காரங்களைப் பற்றி கேளுங்கள்...', ai_assistant:'AI உதவியாளர்', language_preferences:'மொழி விருப்பங்கள்',
     cat_anniversary:'ஆண்டு விழா', cat_birthdays:'பிறந்தநாட்கள்', cat_gifts:'பரிசுகள்',
     cat_dinners:'கேண்டில்லைட் டின்னர்', cat_decorations:'அலங்காரம்', cat_festivals:'திருவிழாக்கள்',
     cat_baby:'பேபி ஷவர்', cat_kids:'குழந்தை விழாக்கள்', cat_proposal:'திருமண முன்மொழிவு',

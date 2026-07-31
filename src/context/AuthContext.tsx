@@ -26,6 +26,7 @@ interface AuthContextValue extends AuthState {
   logout: () => void;
   setAuthRedirect: (redirect: AuthRedirect) => void;
   clearAuthRedirect: () => void;
+  updateUser: (user: AuthUser) => void;
 }
 
 const initialAuthState: AuthState = {
@@ -105,6 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading: false,
       initialized: true,
     }));
+    document.body.style.overflow = '';
   }, []);
 
   const logout = useCallback(() => {
@@ -132,9 +134,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState((prev) => ({ ...prev, authRedirect: null }));
   }, []);
 
+  const updateUser = useCallback((user: AuthUser) => {
+    localStorage.setItem('user', JSON.stringify(user));
+    setState((prev) => ({ ...prev, user, isLoggedIn: true, isAdmin: user.role === 'admin' }));
+  }, []);
+
   const value = useMemo(
-    () => ({ ...state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect }),
-    [state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect]
+    () => ({ ...state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect, updateUser }),
+    [state, open, close, setTab, login, logout, setAuthRedirect, clearAuthRedirect, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
