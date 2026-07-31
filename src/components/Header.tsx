@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 
 const LOGO = (
   <img
-    src="/balloons1.png"
+    src="/final_logo.jpeg"
     alt="TheDecorParty"
     className="h-9 w-9 object-contain"
   />
