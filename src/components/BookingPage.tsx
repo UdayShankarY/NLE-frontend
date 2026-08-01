@@ -24,8 +24,6 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     name: '',
     mobile: '',
     location: '',
-    pincode: '',
-    members: '1',
     eventDate: '',
     eventTime: '',
     requests: '',
@@ -45,7 +43,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   };
 
   const validate = () => {
-    if (!form.name || !form.eventDate || !form.eventTime || !form.members || !form.mobile || !form.location || !form.pincode) {
+    if (!form.name || !form.eventDate || !form.eventTime || !form.mobile || !form.location) {
       return false;
     }
     return true;
@@ -61,10 +59,9 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       '',
       `*Event Date:* ${form.eventDate}`,
       `*Event Time:* ${form.eventTime}`,
-      `*Guests:* ${form.members}`,
       `*Name:* ${form.name}`,
       `*Contact:* +91 ${form.mobile}`,
-      `*Location:* ${form.location} ${form.pincode}`,
+      `*Location:* ${form.location}`,
       form.requests ? `*Special Requests:* ${form.requests}` : '',
       '',
       'Please confirm availability and payment details. Thank you!',
@@ -186,15 +183,6 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
                   onChange={e => updateField('eventTime', e.target.value)}
                   required
                 />
-                <Input
-                  label="Event Capacity"
-                  id="members"
-                  type="number"
-                  min="1"
-                  value={form.members}
-                  onChange={e => updateField('members', e.target.value)}
-                  required
-                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -206,14 +194,6 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
                   placeholder="10 digit mobile"
                   value={form.mobile}
                   onChange={e => updateField('mobile', e.target.value)}
-                  required
-                />
-                <Input
-                  label="Pin Code"
-                  id="pincode"
-                  type="text"
-                  value={form.pincode}
-                  onChange={e => updateField('pincode', e.target.value)}
                   required
                 />
               </div>

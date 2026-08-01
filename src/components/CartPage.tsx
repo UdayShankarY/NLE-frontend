@@ -38,8 +38,7 @@ export const CartPage: React.FC<CartPageProps> = ({
           '    ' + i.name,
           String.fromCodePoint(0x1F4B0) + ' *Price:* Rs.' + i.price.toLocaleString() + (i.originalPrice ? '  ~Rs.' + i.originalPrice.toLocaleString() + '~' : ''),
           String.fromCodePoint(0x1F4C5) + ' *Event Date:* ' + b.eventDate + ' at ' + b.eventTime,
-          String.fromCodePoint(0x1F4CD) + ' *Venue:* ' + b.location + ' — ' + b.pincode,
-          String.fromCodePoint(0x1F465) + ' *Guests:* ' + b.members + ' members',
+          String.fromCodePoint(0x1F4CD) + ' *Venue:* ' + b.location,
           String.fromCodePoint(0x1F4DE) + ' *Contact:* +91 ' + b.mobile,
         ];
         if (b.requests) parts.push(String.fromCodePoint(0x1F4DD) + ' *Special Requests:* ' + b.requests);
