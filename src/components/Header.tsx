@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut } from 'lucide-react';
+import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut, Gift } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { AdminCategory, AuthTab, AuthUser, Translations } from '../types';
 import { AssistantTrigger } from './AssistantPanel';
@@ -147,6 +147,9 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="py-2">
           <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/profile'); }}>
             <User size={17} /> {t.profile || 'Profile'}
+          </button>
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/wishlist'); }}>
+            <Gift size={17} /> Wishlist
           </button>
           <div className="mt-1 border-t border-current/10 px-3 pt-2">
             <div className="mb-2 flex items-center gap-3 text-sm"><Moon size={17} /> {t.theme_label || 'Theme'}</div>

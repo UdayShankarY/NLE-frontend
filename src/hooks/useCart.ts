@@ -6,10 +6,6 @@ export function useCart() {
     try { return JSON.parse(localStorage.getItem('cart') || '[]'); } catch { return []; }
   });
 
-  const save = (next: CartItem[]) => {
-    setItems(next);
-    localStorage.setItem('cart', JSON.stringify(next));
-  };
   const addItem = useCallback((product: AdminProduct, bookingDetails?: BookingDetails) => {
     setItems(prev => {
       const exists = prev.find(i => i._id === product._id);

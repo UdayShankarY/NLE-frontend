@@ -141,6 +141,7 @@ export interface AuthUser {
   lastName: string;
   email: string;
   avatar?: string;
+  wishlist?: string[];
   role: 'user' | 'admin';  // Set in MongoDB — admin sees different UI
   phone?: string;
   photoURL?: string;

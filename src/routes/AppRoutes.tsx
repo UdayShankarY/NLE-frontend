@@ -5,6 +5,7 @@ import ProductPage from '../pages/ProductPage';
 import BookingRoutePage from '../pages/BookingRoutePage';
 import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
+import WishlistPage from '../pages/WishlistPage';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import ProfilePage from '../pages/ProfilePage';
@@ -56,6 +57,7 @@ export default function AppRoutes() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/dashboard" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><AdminPage /></AdminRoute>} />

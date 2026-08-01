@@ -1,4 +1,3 @@
-import React from 'react';
 import { MOST_BOOKED } from './data';
 
 export const DebugProducts = () => {

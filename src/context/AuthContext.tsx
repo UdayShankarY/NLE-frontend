@@ -71,7 +71,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('AuthContext decoded JWT role:', decodedRole);
 
     if (!token) {
-      setState(prev => ({ ...prev, isLoading: false, initialized: true }));
+      localStorage.removeItem('user');
+      setState(prev => ({
+        ...prev,
+        user: null,
+        isLoggedIn: false,
+        isAdmin: false,
+        isLoading: false,
+        initialized: true,
+        authRedirect: null,
+      }));
       return;
     }
 
@@ -90,6 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
       } catch {
         initialUser = null;
+        localStorage.removeItem('user');
       }
     } else {
       setState(prev => ({ ...prev, isLoading: true, initialized: false }));
@@ -110,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: user.role || 'user',
           name: user.name?.trim() || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
           avatar: user.avatar?.trim() || user.photoURL?.trim() || '',
+          wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((id) => String(id)) : [],
           firstName: user.firstName?.trim() || '',
           lastName: user.lastName?.trim() || '',
           photoURL: user.photoURL?.trim() || '',

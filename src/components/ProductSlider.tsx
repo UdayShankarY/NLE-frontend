@@ -1,8 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import type { AdminProduct, Translations } from '../types';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../hooks/useLanguage';
+import { useAuth } from '../hooks/useAuth';
+import { getApiUrl } from '../lib/api';
 
 const badgeColorClass: Record<string, string> = {
   purple: 'bg-brand-purple text-white',
@@ -24,17 +26,21 @@ export const ProductCard: React.FC<{
   isLanding = false,
 }) => {
   const [wished, setWished] = useState(false);
+  const auth = useAuth();
+  useEffect(() => {
+    setWished(Boolean(auth.user?.wishlist?.includes(product._id)));
+  }, [auth.user?.wishlist, product._id]);
   const { t } = useLanguage();
 
-  return (
+    return (
     <div
       data-card
       className={cn(
         isAI
-          ? 'w-full cursor-pointer overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg sm:w-[230px]'
+          ? 'w-full cursor-pointer overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg'
           : cn(
-              'flex h-full flex-shrink-0 cursor-pointer flex-col overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg',
-              isLanding ? 'w-[80vw] sm:w-[230px]' : 'w-full sm:w-[230px]'
+              'flex h-full cursor-pointer flex-col overflow-hidden rounded-card border border-border bg-white shadow-card transition-transform hover:-translate-y-1 hover:shadow-lg',
+              isLanding ? 'w-[80vw] sm:w-[230px]' : 'w-full'
             )
       )}
       onClick={() => onViewDetails(product)}
@@ -61,9 +67,31 @@ export const ProductCard: React.FC<{
         {!isAI && (
           <button
             className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-red-500 shadow hover:bg-white"
-            onClick={(e) => {
+            onClick={async (e) => {
               e.stopPropagation();
-              setWished((w) => !w);
+              const next = !wished;
+              setWished(next);
+
+              if (!auth.isLoggedIn) {
+                auth.open('login');
+                setWished(!next);
+                return;
+              }
+
+              try {
+                const token = localStorage.getItem('token');
+                const url = getApiUrl(`/api/wishlist/${product._id}`);
+                const res = await fetch(url, { method: next ? 'POST' : 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+                const payload = await res.json().catch(() => null);
+                if (!res.ok || !payload?.wishlist) {
+                  setWished(!next);
+                } else {
+                  // update auth user wishlist
+                  auth.updateUser({ wishlist: payload.wishlist.map((p: any) => String(p._id || p)) });
+                }
+              } catch (err) {
+                setWished(!next);
+              }
             }}
           >
             <Heart size={16} fill={wished ? "currentColor" : "none"} />
