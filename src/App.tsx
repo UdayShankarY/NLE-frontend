@@ -210,8 +210,8 @@ export default function App() {
       t={t}
       onAssistantOpen={() => setAssistantOpen(true)}
       onLogoClick={handleLogoClick}
-      showAssistantButton={!auth.isLoggedIn && !auth.isAdmin}
-      showMobileMenu={!auth.isLoggedIn && !auth.isAdmin}
+      showAssistantButton={!auth.isAdmin}
+      showMobileMenu={!auth.isAdmin}
       categories={categories}
       onSelectCategory={handleCatalogSelect}
       assistantOpen={assistantOpen}

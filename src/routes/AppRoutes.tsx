@@ -8,6 +8,8 @@ import AdminPage from '../pages/AdminPage';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import ProfilePage from '../pages/ProfilePage';
+import ProtectedRoute from '../components/ProtectedRoute';
+import AdminRoute from '../components/AdminRoute';
 import { ScrollToTop } from '../components/ScrollToTop';
 import { trackPageView, trackSearch, trackViewCategory } from '../lib/analytics';
 
@@ -53,16 +55,16 @@ export default function AppRoutes() {
         <Route path="/about" element={<TermsPageRoute />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/admin/dashboard" element={<AdminPage />} />
-        <Route path="/admin/products" element={<AdminPage />} />
-        <Route path="/admin/categories" element={<AdminPage />} />
-        <Route path="/admin/users" element={<AdminPage />} />
-        <Route path="/admin/orders" element={<AdminPage />} />
-        <Route path="/admin/bookings" element={<AdminPage />} />
-        <Route path="/admin/sliders" element={<AdminPage />} />
-        <Route path="/admin/terms" element={<AdminPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/dashboard" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/products" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/categories" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/bookings" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/sliders" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/terms" element={<AdminRoute><AdminPage /></AdminRoute>} />
       </Routes>
     </>
   );

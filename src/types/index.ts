@@ -136,9 +136,11 @@ export type TranslationsMap = Record<string, Translations>;
 
 export interface AuthUser {
   id: string;
+  name?: string;
   firstName: string;
   lastName: string;
   email: string;
+  avatar?: string;
   role: 'user' | 'admin';  // Set in MongoDB — admin sees different UI
   phone?: string;
   photoURL?: string;

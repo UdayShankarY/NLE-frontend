@@ -3,6 +3,7 @@ import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut } from 'lucide-react'
 import { useNavigate } from 'react-router-dom';
 import type { AdminCategory, AuthTab, AuthUser, Translations } from '../types';
 import { AssistantTrigger } from './AssistantPanel';
+import Avatar from './Avatar';
 import { cn } from '../lib/utils';
 
 const LOGO = (
@@ -77,13 +78,6 @@ export interface HeaderProps {
   onSelectCategory?: (catName: string, subName?: string) => void;
 }
 
-const avatarColors = ['bg-brand-purple', 'bg-pink-600', 'bg-emerald-600', 'bg-sky-600', 'bg-amber-600'];
-
-function getAvatarColor(value: string) {
-  const hash = Array.from(value).reduce((total, character) => total + character.charCodeAt(0), 0);
-  return avatarColors[hash % avatarColors.length];
-}
-
 /**
  * Site header. Previously duplicated verbatim across three branches of App.tsx
  * (home / product detail / booking) as `.nh` markup — now one component
@@ -135,13 +129,7 @@ export const Header: React.FC<HeaderProps> = ({
         className={cn('flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors', darkMode ? 'border-slate-700 bg-slate-900 text-white hover:border-brand-purple-light' : 'border-border bg-white hover:border-brand-purple-light')}
         onClick={() => setAccountOpen(open => !open)}
       >
-        {auth.user?.photoURL ? (
-          <img src={auth.user.photoURL} alt="" className="h-8 w-8 rounded-full object-cover" />
-        ) : (
-          <span className={cn('flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white', getAvatarColor(`${auth.user?.firstName ?? ''}${auth.user?.email ?? ''}`))}>
-            {auth.user?.firstName?.[0]?.toUpperCase() || auth.user?.email?.[0]?.toUpperCase()}
-          </span>
-        )}
+        <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-8 w-8" />
         <span className="hidden flex-col items-start leading-tight sm:flex">
           <span className={cn('text-xs font-semibold', darkMode ? 'text-white' : 'text-ink')}>Hello, {auth.user?.firstName}</span>
           <span className={darkMode ? 'text-[11px] text-slate-300' : 'text-[11px] text-ink-muted'}>{t.mob_acc_title}</span>
@@ -150,13 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
       </button>
       <div className={cn('absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right rounded-xl border p-2 shadow-xl transition-all duration-200', accountOpen ? 'visible translate-y-0 scale-100 opacity-100' : 'invisible -translate-y-1 scale-95 opacity-0', darkMode ? 'border-slate-700 bg-slate-900 text-white' : 'border-border bg-white text-ink')} role="menu">
         <div className="flex items-center gap-3 border-b border-current/10 px-3 py-3">
-          {auth.user?.photoURL ? (
-            <img src={auth.user.photoURL} alt="" className="h-11 w-11 flex-shrink-0 rounded-full object-cover" />
-          ) : (
-            <span className={cn('flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-lg font-bold text-white', getAvatarColor(`${auth.user?.firstName ?? ''}${auth.user?.email ?? ''}`))}>
-              {auth.user?.firstName?.[0]?.toUpperCase() || auth.user?.email?.[0]?.toUpperCase()}
-            </span>
-          )}
+          <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-11 w-11 flex-shrink-0" />
           <div className="min-w-0">
             <div className="truncate text-sm font-semibold">{[auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ')}</div>
             <div className={cn('truncate text-xs', darkMode ? 'text-slate-300' : 'text-ink-muted')}>{auth.user?.email}</div>

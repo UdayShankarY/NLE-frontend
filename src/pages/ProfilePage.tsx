@@ -8,8 +8,10 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import { useAI } from '../context/AIContext';
 import { BackButton } from '../components/BackButton';
+import Avatar from '../components/Avatar';
 import { cn } from '../lib/utils';
 import { getApiUrl } from '../lib/api';
+import { getUserDisplayName } from '../lib/avatar';
 
 const valueOrEmpty = (value?: string) => value?.trim() || 'Not provided';
 
@@ -22,7 +24,6 @@ export default function ProfilePage() {
   const { messages, input, inputRef, setInput, sendMessage } = useAI();
   const user = auth.user;
   const [assistantOpen, setAssistantOpen] = useState(false);
-  const [avatarFailed, setAvatarFailed] = useState(false);
   const [form, setForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -40,17 +41,30 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || !auth.user) return;
 
     fetch(getApiUrl('/api/auth/profile'), { headers: { Authorization: `Bearer ${token}` } })
-      .then(response => response.ok ? response.json() : null)
+      .then(async response => {
+        if (!response.ok) throw new Error('Failed to load profile');
+        const payload = await response.json();
+        return payload;
+      })
       .then(payload => {
         if (!payload?.user) return;
-        auth.updateUser({ ...auth.user!, ...payload.user });
-        setForm(current => ({ ...current, ...payload.user }));
+        const normalizedUser = {
+          ...auth.user,
+          ...payload.user,
+          avatar: payload.user.avatar?.trim() || payload.user.photoURL?.trim() || auth.user?.avatar?.trim() || auth.user?.photoURL?.trim() || '',
+          photoURL: payload.user.photoURL?.trim() || auth.user?.photoURL?.trim() || '',
+          name: payload.user.name?.trim() || [payload.user.firstName, payload.user.lastName].filter(Boolean).join(' ') || auth.user?.name || auth.user?.email || '',
+          firstName: payload.user.firstName?.trim() || auth.user?.firstName || '',
+          lastName: payload.user.lastName?.trim() || auth.user?.lastName || '',
+        };
+        auth.updateUser(normalizedUser);
+        setForm(current => ({ ...current, ...normalizedUser }));
       })
       .catch(() => setSaveMessage('Unable to load profile details.'));
-  }, []);
+  }, [auth.user?.id]);
 
   if (!user) {
     navigate('/');
@@ -76,7 +90,14 @@ export default function ProfilePage() {
       });
       const payload = await response.json();
       if (!response.ok || !payload.user) throw new Error(payload.msg || 'Unable to save profile');
-      auth.updateUser({ ...auth.user!, ...payload.user });
+      const normalizedUser = {
+        ...auth.user!,
+        ...payload.user,
+        avatar: payload.user.avatar?.trim() || payload.user.photoURL?.trim() || auth.user?.avatar?.trim() || auth.user?.photoURL?.trim() || '',
+        photoURL: payload.user.photoURL?.trim() || auth.user?.photoURL?.trim() || '',
+        name: payload.user.name?.trim() || [payload.user.firstName, payload.user.lastName].filter(Boolean).join(' ') || auth.user?.name || auth.user?.email || '',
+      };
+      auth.updateUser(normalizedUser);
       setForm(current => ({ ...current, ...payload.user }));
       setEditing(false);
       setSaveMessage('Profile saved successfully.');
@@ -87,14 +108,8 @@ export default function ProfilePage() {
     }
   };
 
-  const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email;
-  const avatarInitial = (user.firstName?.trim() || user.email?.trim() || 'U').charAt(0).toUpperCase();
-
-  const avatar = user.photoURL && !avatarFailed ? (
-    <img src={user.photoURL} alt="" onError={() => setAvatarFailed(true)} className="h-20 w-20 rounded-full object-cover" />
-  ) : (
-    <div className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-purple text-2xl font-bold text-white">{avatarInitial}</div>
-  );
+  const fullName = getUserDisplayName(user) || user?.email || '';
+  const avatar = <Avatar user={user} alt={fullName || 'User avatar'} className="h-20 w-20" />;
 
   return (
     <MainLayout
