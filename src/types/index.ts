@@ -155,7 +155,27 @@ export interface AuthUser {
   createdAt?: string;
 }
 
+export interface AdminAddon {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  active: boolean;
+  category?: string;
+  products?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type AuthTab = 'login' | 'register' | 'phone' | 'forgot' | 'success';
+
+export interface BookingAddonSnapshot {
+  id?: string;
+  name: string;
+  price: number;
+  qty?: number;
+}
 
 export interface BookingDetails {
   name: string;
@@ -164,7 +184,7 @@ export interface BookingDetails {
   eventDate: string;
   eventTime: string;
   requests: string;
-  addOns: { name: string; price: number }[];
+  addOns: BookingAddonSnapshot[];
 }
 
 export interface CartItem {
@@ -209,6 +229,7 @@ export interface AdminProduct {
   description: string;
   inclusions: string[];
   addOns: { name: string; price: number }[];
+  addons?: (string | AdminAddon)[];
   image: string;
   moreImages: string[];
   badge?: string;
@@ -269,7 +290,7 @@ export interface AdminUser {
   active: boolean;
 }
 
-export type AdminView = 'dashboard' | 'categories' | 'products' | 'sliders' | 'orders' | 'users' | 'terms';
+export type AdminView = 'dashboard' | 'categories' | 'products' | 'addons' | 'activities' | 'sliders' | 'orders' | 'users' | 'terms';
 
 export interface DashboardStats {
   totalRevenue: number;

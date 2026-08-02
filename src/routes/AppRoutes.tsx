@@ -61,6 +61,8 @@ export default function AppRoutes() {
         <Route path="/admin" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/dashboard" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/products" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/addons" element={<AdminRoute><AdminPage /></AdminRoute>} />
+        <Route path="/admin/activities" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/categories" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/users" element={<AdminRoute><AdminPage /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><AdminPage /></AdminRoute>} />

@@ -3,7 +3,7 @@ import type { AdminCategory } from "../../types";
 import { Modal } from "./Modal";
 import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "react-toastify";
-import { Pencil, Eye, EyeOff, Trash2, Layers, Plus, Upload, Link as LinkIcon, X } from "lucide-react";
+import { Pencil, Eye, EyeOff, Trash2, Layers, Plus, Upload, Link as LinkIcon, X, Copy } from "lucide-react";
 import { EmptyState } from "../EmptyState";
 import { cn } from "../../lib/utils";
 import { getApiUrl } from '../../lib/api';
@@ -35,6 +35,16 @@ export const CategoriesView = () => {
     slug: "",
     active: true,
   });
+
+  const copyToClipboard = async (value: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Copied link');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
 
   const addSubcategory = async (categoryId: string) => {
     if (!newSubName.trim()) {
@@ -126,10 +136,7 @@ export const CategoriesView = () => {
     setShowModal(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadCategoryImageFile = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB");
       return;
@@ -168,10 +175,21 @@ export const CategoriesView = () => {
     }
   };
 
-  const handleSubFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    await uploadCategoryImageFile(file);
+    e.target.value = "";
+  };
 
+  const handleCategoryDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadCategoryImageFile(file);
+  };
+
+  const uploadSubImageFile = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB");
       return;
@@ -208,6 +226,20 @@ export const CategoriesView = () => {
     } finally {
       setSubUploading(false);
     }
+  };
+
+  const handleSubFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadSubImageFile(file);
+    e.target.value = "";
+  };
+
+  const handleSubDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadSubImageFile(file);
   };
 
   const save = async () => {
@@ -328,6 +360,12 @@ export const CategoriesView = () => {
                 >
                   <Plus size={12} /> Sub
                 </button>
+                <button
+                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
+                  onClick={() => copyToClipboard(`/category/${encodeURIComponent(cat.name)}`)}
+                >
+                  <Copy size={12} /> Copy Link
+                </button>
               </div>
 
               <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
@@ -361,7 +399,11 @@ export const CategoriesView = () => {
             {imageModeTabs(imageMode, setImageMode)}
 
             {imageMode === "upload" ? (
-              <div className="adm-file-upload">
+              <div
+                className="adm-file-upload"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleCategoryDrop}
+              >
                 <input
                   type="file"
                   id="cat-image-upload"
@@ -382,7 +424,7 @@ export const CategoriesView = () => {
                       <span className="adm-file-text">
                         {form.image ? "Change Image" : "Choose Image"}
                       </span>
-                      <span className="adm-file-hint">Max 5MB (JPG, PNG, WebP)</span>
+                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
                     </>
                   )}
                 </label>
@@ -528,7 +570,11 @@ export const CategoriesView = () => {
             {imageModeTabs(subImageMode, setSubImageMode)}
 
             {subImageMode === "upload" ? (
-              <div className="adm-file-upload">
+              <div
+                className="adm-file-upload"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleSubDrop}
+              >
                 <input
                   type="file"
                   id="sub-image-upload"
@@ -549,7 +595,7 @@ export const CategoriesView = () => {
                       <span className="adm-file-text">
                         {subImage ? "Change Image" : "Choose Image"}
                       </span>
-                      <span className="adm-file-hint">Max 5MB (JPG, PNG, WebP)</span>
+                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
                     </>
                   )}
                 </label>

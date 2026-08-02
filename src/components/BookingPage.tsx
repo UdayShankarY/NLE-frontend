@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BackButton } from './BackButton';
-import type { AdminProduct, BookingDetails } from '../types';
+import type { AdminProduct, BookingAddonSnapshot, BookingDetails } from '../types';
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getApiUrl } from '../lib/api';
@@ -9,6 +9,7 @@ import { trackBeginCheckout, trackPaymentFailed, trackPurchase } from '../lib/an
 interface BookingPageProps {
   product: AdminProduct;
   preferredMethod?: 'razorpay' | 'whatsapp';
+  selectedAddOns?: BookingAddonSnapshot[];
   onBack: () => void;
   onConfirm: (product: AdminProduct, details: BookingDetails, method: 'razorpay' | 'whatsapp') => void;
 }
@@ -19,7 +20,7 @@ if (!razorpayKey) {
   throw new Error("VITE_RAZORPAY_KEY_ID is missing");
 }
 // console.log("Frontend Key:", razorpayKey);
-export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMethod = 'razorpay', onBack, onConfirm }) => {
+export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMethod = 'razorpay', selectedAddOns = [], onBack, onConfirm }) => {
   const [form, setForm] = useState<BookingDetails>({
     name: '',
     mobile: '',
@@ -27,16 +28,19 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     eventDate: '',
     eventTime: '',
     requests: '',
-    addOns: [],
+    addOns: selectedAddOns,
   });
   const [paymentMethod, setPaymentMethod] = useState<'razorpay' | 'whatsapp'>(preferredMethod);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const totalPrice = product.price + selectedAddOns.reduce((sum, addon) => sum + (addon.price || 0), 0);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setPaymentMethod(preferredMethod);
-  }, [product, preferredMethod]);
+    setForm(prev => ({ ...prev, addOns: selectedAddOns }));
+  }, [product, preferredMethod, selectedAddOns]);
 
   const updateField = (field: keyof BookingDetails, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -50,12 +54,17 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   };
 
   const openWhatsApp = () => {
+    const selectedSummary = form.addOns.length > 0
+      ? ['*Selected Add-ons:*', ...form.addOns.map(addon => `- ${addon.name} (+Rs.${addon.price.toLocaleString()})`)]
+      : [];
     const message = [
       '*New Booking Request — TheDecorParty*',
       '',
       `*Package:* ${product.name}`,
       `*Category:* ${product.categoryName}${product.subcategory ? ` > ${product.subcategory}` : ''}`,
-      `*Amount:* Rs.${product.price.toLocaleString()}`,
+      `*Amount:* Rs.${totalPrice.toLocaleString()}`,
+      '',
+      ...selectedSummary,
       '',
       `*Event Date:* ${form.eventDate}`,
       `*Event Time:* ${form.eventTime}`,
@@ -67,7 +76,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       'Please confirm availability and payment details. Thank you!',
     ].filter(Boolean).join('\n');
 
-    onConfirm(product, form, 'whatsapp');
+    const payload = { ...form, addOns: selectedAddOns };
+    onConfirm(product, payload, 'whatsapp');
     window.open(`https://wa.me/917022058460?text=${encodeURIComponent(message)}`, '_blank');
   };
 
@@ -85,7 +95,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     const response = await fetch(getApiUrl('/api/payment/create-order'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: product.price }),
+      body: JSON.stringify({ amount: totalPrice }),
     });
 
     if (!response.ok) {
@@ -106,8 +116,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
 
       handler: () => {
         alert("Payment Successful");
-        trackPurchase(`booking-${product._id}-${Date.now()}`, product.price);
-        onConfirm(product, form, 'razorpay');
+        trackPurchase(`booking-${product._id}-${Date.now()}`, totalPrice);
+        onConfirm(product, { ...form, addOns: selectedAddOns }, 'razorpay');
       },
     };
 

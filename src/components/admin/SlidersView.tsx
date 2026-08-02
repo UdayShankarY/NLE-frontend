@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
-import type { AdminSlide } from "../../types";
+import { useState, useEffect, useMemo } from "react";
+import type { AdminSlide, AdminCategory, AdminProduct } from "../../types";
 import { Modal } from "./Modal";
 import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "react-toastify";
-import { GripVertical, Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Check, Lightbulb } from "lucide-react";
+import { GripVertical, Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Check, Lightbulb, Copy } from "lucide-react";
 import { EmptyState } from "../EmptyState";
 import { cn } from "../../lib/utils";
 import { getApiUrl } from '../../lib/api';
 
 const API = getApiUrl('/api/sliders');
+const CATEGORY_API = getApiUrl('/api/categories');
+const PRODUCT_API = getApiUrl('/api/products');
+
+type CTADestination = 'products' | 'category' | 'subcategory' | 'product' | 'custom';
 
 const GRADIENT_PRESETS = [
   { name: "Purple Pink", value: "linear-gradient(135deg, rgba(107,33,168,0.85), rgba(236,72,153,0.75))" },
@@ -27,6 +31,16 @@ export const SlidersView = () => {
   const [imageMode, setImageMode] = useState<"url" | "upload">("upload");
   const [uploading, setUploading] = useState(false);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [subcategorySearch, setSubcategorySearch] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [ctaDestination, setCtaDestination] = useState<CTADestination>('custom');
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
+  const [selectedSubcategory, setSelectedSubcategory] = useState("");
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [customCtaUrl, setCustomCtaUrl] = useState("");
 
   const [form, setForm] = useState({
     image: "",
@@ -50,12 +64,117 @@ export const SlidersView = () => {
     }
   };
 
+  const fetchCategories = async () => {
+    try {
+      const res = await fetch(CATEGORY_API);
+      const data = await res.json();
+      setCategories(Array.isArray(data) ? data.filter((c) => c.active) : []);
+    } catch (err) {
+      toast.error("Failed to load categories");
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await fetch(PRODUCT_API);
+      const data = await res.json();
+      setProducts(Array.isArray(data) ? data.filter((p) => p.active) : []);
+    } catch (err) {
+      toast.error("Failed to load products");
+    }
+  };
+
   useEffect(() => {
     fetchSliders();
+    fetchCategories();
+    fetchProducts();
   }, []);
+
+  const filteredCategories = useMemo(() => {
+    const query = categorySearch.trim().toLowerCase();
+    return categories.filter((cat) => !query || cat.name.toLowerCase().includes(query));
+  }, [categories, categorySearch]);
+
+  const subcategoryOptions = useMemo(() => {
+    const query = subcategorySearch.trim().toLowerCase();
+    const entries: { name: string; parentName: string }[] = [];
+
+    categories.forEach((cat) => {
+      const subs = cat.subcategories || [];
+      subs.forEach((sub) => {
+        const subName = typeof sub === 'string' ? sub : sub.name;
+        if (!query || subName.toLowerCase().includes(query) || cat.name.toLowerCase().includes(query)) {
+          entries.push({ name: subName, parentName: cat.name });
+        }
+      });
+    });
+
+    return entries;
+  }, [categories, subcategorySearch]);
+
+  const filteredProducts = useMemo(() => {
+    const query = productSearch.trim().toLowerCase();
+    return products.filter((prod) => !query || prod.name.toLowerCase().includes(query));
+  }, [products, productSearch]);
+
+  const selectedCategory = categories.find((cat) => cat._id === selectedCategoryId);
+  const selectedProduct = products.find((prod) => prod._id === selectedProductId);
+
+  const getCtaStateFromLink = (link: string) => {
+    if (!link) return { destination: 'custom' as CTADestination, customUrl: link };
+    const normalized = link.trim();
+    const categoryMatch = normalized.match(/^\/category\/([^/]+)(?:\/(.+))?$/);
+    if (categoryMatch) {
+      return {
+        destination: categoryMatch[2] ? 'subcategory' as CTADestination : 'category' as CTADestination,
+        categoryValue: decodeURIComponent(categoryMatch[1]),
+        subcategoryValue: categoryMatch[2] ? decodeURIComponent(categoryMatch[2]) : undefined,
+      };
+    }
+
+    const productMatch = normalized.match(/^\/product\/([A-Za-z0-9_-]+)$/);
+    if (productMatch) {
+      return { destination: 'product' as CTADestination, productId: productMatch[1] };
+    }
+
+    return { destination: 'custom' as CTADestination, customUrl: normalized };
+  };
+
+  const generatedCtaLink = useMemo(() => {
+    switch (ctaDestination) {
+      case 'category':
+        return selectedCategory ? `/category/${encodeURIComponent(selectedCategory.name)}` : '';
+      case 'subcategory':
+        if (!selectedCategory || !selectedSubcategory) return '';
+        return `/category/${encodeURIComponent(selectedCategory.name)}/${encodeURIComponent(selectedSubcategory)}`;
+      case 'product':
+        return selectedProduct ? `/product/${selectedProduct._id}` : '';
+      case 'custom':
+      default:
+        return customCtaUrl || form.ctaLink;
+    }
+  }, [ctaDestination, selectedCategory, selectedSubcategory, selectedProduct, customCtaUrl, form.ctaLink]);
+
+  const copyToClipboard = async (value: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Copied CTA link');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
 
   const openAdd = () => {
     setEditing(null);
+    setCategorySearch("");
+    setSubcategorySearch("");
+    setProductSearch("");
+    setCtaDestination('custom');
+    setSelectedCategoryId("");
+    setSelectedSubcategory("");
+    setSelectedProductId("");
+    setCustomCtaUrl("");
     setForm({
       image: "",
       chip: "",
@@ -73,6 +192,19 @@ export const SlidersView = () => {
 
   const openEdit = (slide: AdminSlide) => {
     setEditing(slide);
+    setCategorySearch("");
+    setSubcategorySearch("");
+    setProductSearch("");
+    const ctaState = getCtaStateFromLink(slide.ctaLink);
+    const selectedCategory = ctaState.categoryValue
+      ? categories.find((cat) => cat.name === ctaState.categoryValue || cat.slug === ctaState.categoryValue)
+      : undefined;
+
+    setCtaDestination(ctaState.destination);
+    setSelectedCategoryId(selectedCategory?._id || "");
+    setSelectedSubcategory(ctaState.subcategoryValue || "");
+    setSelectedProductId(ctaState.productId || "");
+    setCustomCtaUrl(ctaState.destination === 'custom' ? ctaState.customUrl || slide.ctaLink : "");
     setForm({
       image: slide.image,
       chip: slide.chip,
@@ -88,10 +220,7 @@ export const SlidersView = () => {
     setShowModal(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadSliderImageFile = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB");
       return;
@@ -130,6 +259,20 @@ export const SlidersView = () => {
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadSliderImageFile(file);
+    e.target.value = "";
+  };
+
+  const handleSliderDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadSliderImageFile(file);
+  };
+
   const save = async () => {
     if (!form.headline.trim()) {
       toast.error("Headline is required");
@@ -141,9 +284,30 @@ export const SlidersView = () => {
       return;
     }
 
+    if (ctaDestination === 'category' && !selectedCategory) {
+      toast.error("Please select a category for the CTA link.");
+      return;
+    }
+
+    if (ctaDestination === 'subcategory' && !selectedSubcategory) {
+      toast.error("Please select a subcategory for the CTA link.");
+      return;
+    }
+
+    if (ctaDestination === 'product' && !selectedProduct) {
+      toast.error("Please select a product for the CTA link.");
+      return;
+    }
+
+    if (ctaDestination === 'custom' && !customCtaUrl.trim() && !form.ctaLink.trim()) {
+      toast.error("Please enter a custom CTA URL.");
+      return;
+    }
+
     // Set gradient to 'none' if useGradient is false
     const payload = {
       ...form,
+      ctaLink: generatedCtaLink || form.ctaLink,
       gradient: form.useGradient ? form.gradient : 'none',
     };
 
@@ -321,7 +485,11 @@ export const SlidersView = () => {
             </div>
 
             {imageMode === "upload" ? (
-              <div className="adm-file-upload">
+              <div
+                className="adm-file-upload"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleSliderDrop}
+              >
                 <input
                   type="file"
                   id="slider-image-upload"
@@ -342,7 +510,7 @@ export const SlidersView = () => {
                       <span className="adm-file-text">
                         {form.image ? "Change Image" : "Choose Image"}
                       </span>
-                      <span className="adm-file-hint">Max 5MB &middot; 1920x400px recommended</span>
+                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
                     </>
                   )}
                 </label>
@@ -434,13 +602,157 @@ export const SlidersView = () => {
               </div>
 
               <div className="adm-form-col">
-                <label>CTA Link</label>
-                <input
-                  className="adm-input"
-                  value={form.ctaLink}
-                  onChange={(e) => setForm((f) => ({ ...f, ctaLink: e.target.value }))}
-                  placeholder="#products or /category/birthdays"
-                />
+                <label>CTA Destination</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { value: 'category' as CTADestination, label: 'Category' },
+                    { value: 'subcategory' as CTADestination, label: 'Subcategory' },
+                    { value: 'product' as CTADestination, label: 'Product' },
+                    { value: 'custom' as CTADestination, label: 'Custom URL' },
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`rounded-lg border px-3 py-2 text-sm text-left transition ${ctaDestination === option.value ? 'border-brand-purple bg-brand-purple/10 text-brand-purple' : 'border-border bg-white text-ink hover:bg-gray-50'}`}
+                      onClick={() => setCtaDestination(option.value)}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4 space-y-3">
+
+                  {ctaDestination === 'category' && (
+                    <div className="space-y-3">
+                      <input
+                        className="adm-input"
+                        value={categorySearch}
+                        onChange={(e) => setCategorySearch(e.target.value)}
+                        placeholder="Search categories"
+                      />
+                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                        {filteredCategories.length > 0 ? filteredCategories.map((cat) => (
+                          <button
+                            key={cat._id}
+                            type="button"
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${selectedCategoryId === cat._id ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            onClick={() => setSelectedCategoryId(cat._id)}
+                          >
+                            <span>{cat.name}</span>
+                            <span className="text-xs text-ink-muted">{cat.productCount || 0}</span>
+                          </button>
+                        )) : (
+                          <div className="py-3 text-sm text-ink-muted">No categories found.</div>
+                        )}
+                      </div>
+                      {selectedCategory && (
+                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                          <div className="font-semibold">Preview</div>
+                          <div className="mt-1">{selectedCategory.name}</div>
+                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/category/${encodeURIComponent(selectedCategory.name)}`}</div>
+                          <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/category/${encodeURIComponent(selectedCategory.name)}`)}>
+                            <Copy size={14} /> Copy CTA Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {ctaDestination === 'subcategory' && (
+                    <div className="space-y-3">
+                      <input
+                        className="adm-input"
+                        value={subcategorySearch}
+                        onChange={(e) => setSubcategorySearch(e.target.value)}
+                        placeholder="Search subcategories"
+                      />
+                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                        {subcategoryOptions.length > 0 ? subcategoryOptions.map((sub) => (
+                          <button
+                            key={`${sub.parentName}-${sub.name}`}
+                            type="button"
+                            className={`flex w-full flex-col items-start rounded-lg px-3 py-2 text-left text-sm ${selectedSubcategory === sub.name ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            onClick={() => setSelectedSubcategory(sub.name)}
+                          >
+                            <span className="font-medium">{sub.name}</span>
+                            <span className="mt-0.5 text-xs text-ink-muted">{sub.parentName}</span>
+                          </button>
+                        )) : (
+                          <div className="py-3 text-sm text-ink-muted">No subcategories found.</div>
+                        )}
+                      </div>
+                      {selectedSubcategory && (
+                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                          <div className="font-semibold">Preview</div>
+                          <div className="mt-1">{selectedSubcategory}</div>
+                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/category/${encodeURIComponent(selectedCategory?.name || '')}/${encodeURIComponent(selectedSubcategory)}`}</div>
+                          <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/category/${encodeURIComponent(selectedCategory?.name || '')}/${encodeURIComponent(selectedSubcategory)}`)}>
+                            <Copy size={14} /> Copy CTA Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {ctaDestination === 'product' && (
+                    <div className="space-y-3">
+                      <input
+                        className="adm-input"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Search products"
+                      />
+                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                        {filteredProducts.length > 0 ? filteredProducts.map((prod) => (
+                          <button
+                            key={prod._id}
+                            type="button"
+                            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left ${selectedProductId === prod._id ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            onClick={() => setSelectedProductId(prod._id)}
+                          >
+                            <img src={prod.image} alt={prod.name} className="h-10 w-10 rounded-md object-cover" />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium truncate">{prod.name}</div>
+                              <div className="mt-0.5 text-xs text-ink-muted truncate">{prod.categoryName}</div>
+                            </div>
+                            <span className="text-xs text-ink-muted">₹{prod.price}</span>
+                          </button>
+                        )) : (
+                          <div className="py-3 text-sm text-ink-muted">No products found.</div>
+                        )}
+                      </div>
+                      {selectedProduct && (
+                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                          <div className="font-semibold">Preview</div>
+                          <div className="mt-1">{selectedProduct.name}</div>
+                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/product/${selectedProduct._id}`}</div>
+                          <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/product/${selectedProduct._id}`)}>
+                            <Copy size={14} /> Copy CTA Link
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {ctaDestination === 'custom' && (
+                    <div className="space-y-3">
+                      <input
+                        className="adm-input"
+                        value={customCtaUrl}
+                        onChange={(e) => setCustomCtaUrl(e.target.value)}
+                        placeholder="/contact or /about"
+                      />
+                      <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                        <div className="font-semibold">Preview</div>
+                        <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{customCtaUrl || form.ctaLink}</div>
+                        <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(customCtaUrl || form.ctaLink)}>
+                          <Copy size={14} /> Copy CTA Link
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

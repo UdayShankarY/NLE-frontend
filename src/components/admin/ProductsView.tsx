@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
-import type { AdminProduct, AdminCategory } from "../../types";
+import type { AdminProduct, AdminCategory, AdminAddon } from "../../types";
 import { Modal } from "./Modal";
 import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "react-toastify";
-import { Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Star, Lightbulb } from "lucide-react";
+import { Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Star, Lightbulb, Copy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { getApiUrl } from '../../lib/api';
 
@@ -13,6 +13,8 @@ const CAT_API = getApiUrl('/api/categories');
 export const ProductsView = () => {
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
+  const [availableAddons, setAvailableAddons] = useState<AdminAddon[]>([]);
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<AdminProduct | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
@@ -39,7 +41,18 @@ export const ProductsView = () => {
     featured: false,
   });
 
+  const copyToClipboard = async (value: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success('Copied link');
+    } catch {
+      toast.error('Failed to copy link');
+    }
+  };
+
   const [newInclusion, setNewInclusion] = useState("");
+  const [addonSearch, setAddonSearch] = useState("");
   const [newAddOn, setNewAddOn] = useState({ name: "", price: 0 });
   const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -64,9 +77,20 @@ export const ProductsView = () => {
     }
   };
 
+  const fetchAddons = async () => {
+    try {
+      const res = await fetch(getApiUrl('/api/addons/active'));
+      const data = await res.json();
+      setAvailableAddons(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error("Failed to load add-ons");
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     fetchCategories();
+    fetchAddons();
   }, []);
 
   const getSubcategories = (): string[] => {
@@ -80,6 +104,7 @@ export const ProductsView = () => {
 
   const openAdd = () => {
     setEditing(null);
+    setSelectedAddonIds([]);
     setForm({
       name: "",
       categoryId: "",
@@ -103,6 +128,8 @@ export const ProductsView = () => {
 
   const openEdit = (p: AdminProduct) => {
     setEditing(p);
+    const selectedIds = (Array.isArray(p.addons) ? p.addons : []).map((addon) => typeof addon === "string" ? addon : addon._id).filter(Boolean);
+    setSelectedAddonIds(selectedIds);
     setForm({
       name: p.name,
       categoryId: p.categoryId,
@@ -124,10 +151,7 @@ export const ProductsView = () => {
     setShowModal(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadImageFile = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB");
       return;
@@ -166,10 +190,21 @@ export const ProductsView = () => {
     }
   };
 
-  const handleMoreImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    await uploadImageFile(file);
+    e.target.value = "";
+  };
 
+  const handleImageDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadImageFile(file);
+  };
+
+  const uploadMoreImageFile = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image size should be less than 5MB");
       return;
@@ -208,6 +243,20 @@ export const ProductsView = () => {
     }
   };
 
+  const handleMoreImagesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadMoreImageFile(file);
+    e.target.value = "";
+  };
+
+  const handleMoreImagesDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    await uploadMoreImageFile(file);
+  };
+
   const save = async () => {
     if (!form.name.trim()) {
       toast.error("Product name is required");
@@ -230,9 +279,15 @@ export const ProductsView = () => {
     }
 
     const selectedCat = categories.find((c) => c._id === form.categoryId);
+    const selectedSnapshots = availableAddons
+      .filter((addon) => selectedAddonIds.includes(addon._id))
+      .map((addon) => ({ id: addon._id, name: addon.name, price: addon.price }));
+
     const payload = {
       ...form,
       categoryName: selectedCat?.name || "",
+      addons: selectedAddonIds,
+      addOns: selectedSnapshots,
     };
 
     if (editing) {
@@ -293,6 +348,11 @@ export const ProductsView = () => {
       toast.error("Add-on name and price are required");
       return;
     }
+    const duplicate = form.addOns.some((addon) => addon.name.trim().toLowerCase() === newAddOn.name.trim().toLowerCase());
+    if (duplicate) {
+      toast.error("This add-on is already attached to the product");
+      return;
+    }
     setForm((f) => ({ ...f, addOns: [...f.addOns, { ...newAddOn }] }));
     setNewAddOn({ name: "", price: 0 });
   };
@@ -300,6 +360,14 @@ export const ProductsView = () => {
   const removeAddOn = (idx: number) => {
     setForm((f) => ({ ...f, addOns: f.addOns.filter((_, i) => i !== idx) }));
   };
+
+  const filteredAvailableAddons = availableAddons.filter((addon) => {
+    const query = addonSearch.trim().toLowerCase();
+    if (!query) return true;
+    return addon.name.toLowerCase().includes(query)
+      || addon.category?.toLowerCase().includes(query)
+      || addon.description?.toLowerCase().includes(query);
+  });
 
   const removeMoreImage = (idx: number) => {
     setForm((f) => ({ ...f, moreImages: f.moreImages.filter((_, i) => i !== idx) }));
@@ -387,6 +455,9 @@ export const ProductsView = () => {
               <div className="mt-3 flex gap-1.5">
                 <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(prod)}>
                   <Pencil size={12} /> Edit
+                </button>
+                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => copyToClipboard(`/product/${prod._id}`)}>
+                  <Copy size={12} /> Copy Link
                 </button>
                 <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(prod._id, !prod.active)}>
                   {prod.active ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -523,7 +594,11 @@ export const ProductsView = () => {
             </div>
 
             {imageMode === "upload" ? (
-              <div className="adm-file-upload">
+              <div
+                className="adm-file-upload"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleImageDrop}
+              >
                 <input
                   type="file"
                   id="product-image-upload"
@@ -544,7 +619,7 @@ export const ProductsView = () => {
                       <span className="adm-file-text">
                         {form.image ? "Change Image" : "Choose Image"}
                       </span>
-                      <span className="adm-file-hint">Max 5MB (JPG, PNG, WebP)</span>
+                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
                     </>
                   )}
                 </label>
@@ -591,7 +666,11 @@ export const ProductsView = () => {
             </div>
 
             {moreImagesMode === "upload" ? (
-              <div className="adm-file-upload">
+              <div
+                className="adm-file-upload"
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleMoreImagesDrop}
+              >
                 <input
                   type="file"
                   id="more-images-upload"
@@ -610,7 +689,7 @@ export const ProductsView = () => {
                     <>
                       <span className="adm-file-icon"><Upload size={20} /></span>
                       <span className="adm-file-text">Add More Images</span>
-                      <span className="adm-file-hint">Max 5MB per image</span>
+                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
                     </>
                   )}
                 </label>
@@ -682,7 +761,50 @@ export const ProductsView = () => {
               </ul>
             )}
 
-            <label>Add-Ons</label>
+            <label>Attach existing active add-ons</label>
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+              <input
+                className="adm-input"
+                value={addonSearch}
+                onChange={(e) => setAddonSearch(e.target.value)}
+                placeholder="Search add-ons"
+              />
+              <button
+                type="button"
+                className="adm-btn-ghost"
+                onClick={() => setSelectedAddonIds([])}
+              >
+                Clear selected
+              </button>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {filteredAvailableAddons.map((addon) => {
+                const checked = selectedAddonIds.includes(addon._id);
+                return (
+                  <label key={addon._id} className="flex items-center gap-2 rounded-lg border border-border bg-gray-50 px-3 py-2 text-sm text-ink">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const next = e.target.checked
+                          ? [...selectedAddonIds, addon._id]
+                          : selectedAddonIds.filter((id) => id !== addon._id);
+                        setSelectedAddonIds(next);
+                      }}
+                    />
+                    <span className="flex-1">{addon.name}</span>
+                    <span className="font-semibold text-brand-purple">₹{addon.price.toLocaleString()}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {filteredAvailableAddons.length === 0 && (
+              <div className="mt-2 rounded-lg border border-dashed border-border bg-gray-50 px-3 py-4 text-sm text-ink-muted">
+                No add-ons match “{addonSearch}”.
+              </div>
+            )}
+
+            <label className="mt-3">Quick add-ons (legacy inline)</label>
             <div className="flex gap-2">
               <input
                 className="adm-input"

@@ -55,7 +55,12 @@ export function useCart() {
     localStorage.removeItem('cart');
   }, []);
 
-  const total = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+  const total = items.reduce((sum, i) => {
+    const addOnTotal = i.bookingDetails.reduce((bookingSum, booking) => {
+      return bookingSum + booking.addOns.reduce((addonSum, addon) => addonSum + addon.price, 0);
+    }, 0);
+    return sum + (i.price * i.qty) + addOnTotal;
+  }, 0);
   const count = items.reduce((sum, i) => sum + i.qty, 0);
 
   return { items, addItem, removeItem, updateQty, clearCart, total, count };

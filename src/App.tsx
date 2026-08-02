@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useAI } from './context/AIContext';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
 import { HeroSlider } from './components/HeroSlider';
 import { ProductSlider } from './components/ProductSlider';
 import { SearchBar } from './components/SearchBar';
 import { CategoryGrid } from './components/CategoryGrid';
 import { SubcategoryScroll } from './components/SubcategoryScroll';
+import { ShareDialog } from './components/shared/ShareDialog';
 import { EmptyState, LoadingState } from './components/EmptyState';
 import { useLanguage } from './hooks/useLanguage';
 import { useAuth } from './hooks/useAuth';
@@ -62,6 +64,41 @@ export default function App() {
   const goBackToCatalogParent = useAppBack(
     activeSubcategory ? buildCatalogPath(activeCategory, null, search) : '/'
   );
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareData, setShareData] = useState({ title: '', text: '', url: '' });
+
+  const openShareDialog = async (title: string, text: string, url: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url });
+        return;
+      } catch (error) {
+        // fallback to dialog
+      }
+    }
+
+    setShareData({ title, text, url });
+    setShareOpen(true);
+  };
+
+  const openCategoryShare = () => {
+    if (!activeCategory) return;
+    openShareDialog(
+      activeCategory,
+      `Explore packages in ${activeCategory}`,
+      `${window.location.origin}/category/${encodeURIComponent(activeCategory)}`
+    );
+  };
+
+  const openSubcategoryShare = () => {
+    if (!activeCategory || !activeSubcategory) return;
+    openShareDialog(
+      activeSubcategory,
+      `Explore ${activeSubcategory} packages in ${activeCategory}`,
+      `${window.location.origin}/category/${encodeURIComponent(activeCategory)}/${encodeURIComponent(activeSubcategory)}`
+    );
+  };
+
   const openBooking = (product: AdminProduct) => {
     if (!auth.isLoggedIn) {
       auth.setAuthRedirect({
@@ -163,6 +200,7 @@ export default function App() {
               onBack={goBackToCatalogParent}
               onSelectSubcategory={name => navigate(buildCatalogPath(activeCategory, name, ''))}
               onViewAll={() => navigate(buildCatalogPath(activeCategory, null, ''))}
+              onShare={openCategoryShare}
             />
           );
         })()}
@@ -180,9 +218,18 @@ export default function App() {
           ) : (
             <>
               {activeSubcategory && activeSubcategory !== '__all__' && (
-                <div className="mx-auto flex max-w-[1400px] items-center gap-2 px-4 pt-4 text-sm text-ink-muted md:px-6">
-                  <button className="font-medium text-ink hover:text-brand-purple" onClick={() => navigate(buildCatalogPath(activeCategory, null, search))}>&larr; {activeCategory}</button>
-                  <span>/ {activeSubcategory}</span>
+                <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 pt-4 text-sm text-ink-muted md:px-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button className="font-medium text-ink hover:text-brand-purple" onClick={() => navigate(buildCatalogPath(activeCategory, null, search))}>&larr; {activeCategory}</button>
+                    <span>/ {activeSubcategory}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openSubcategoryShare}
+                    className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-gray-50"
+                  >
+                    <Share2 size={14} /> Share
+                  </button>
                 </div>
               )}
               {Object.entries(filteredGrouped).map(([categoryName, products]) => (
@@ -236,6 +283,13 @@ export default function App() {
       authModalTab={auth.tab}
     >
       {pageContent}
+      <ShareDialog
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        title={shareData.title}
+        text={shareData.text}
+        url={shareData.url}
+      />
     </MainLayout>
   );
 }

@@ -60,7 +60,7 @@ export default function ProductPage() {
       : '/';
   const goBack = useAppBack(fallbackPath);
 
-  const handleBook = (selectedProduct: typeof product) => {
+  const handleBook = (selectedProduct: typeof product, _method?: 'razorpay' | 'whatsapp', selectedAddOns?: { id?: string; name: string; price: number }[]) => {
     if (!selectedProduct) return;
     if (!auth.isLoggedIn) {
       auth.setAuthRedirect({
@@ -74,7 +74,7 @@ export default function ProductPage() {
     }
 
     navigate(`/booking/${selectedProduct._id}`, {
-      state: { from: `${location.pathname}${location.search}` },
+      state: { from: `${location.pathname}${location.search}`, selectedAddOns: selectedAddOns || [] },
     });
   };
 

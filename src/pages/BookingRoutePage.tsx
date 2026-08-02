@@ -58,6 +58,8 @@ export default function BookingRoutePage() {
     }
   }, [product]);
 
+  const selectedAddOns = Array.isArray(location.state?.selectedAddOns) ? location.state.selectedAddOns : [];
+
   const handleBookingConfirm = (
     selectedProduct: AdminProduct,
     bookingDetails: BookingDetails,
@@ -75,6 +77,7 @@ export default function BookingRoutePage() {
     <BookingForm
       product={product}
       preferredMethod="razorpay"
+      selectedAddOns={selectedAddOns}
       onBack={goBack}
       onConfirm={handleBookingConfirm}
     />

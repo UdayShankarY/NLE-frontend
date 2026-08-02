@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useEffect, useMemo, useState } from 
 import type { AuthTab, AuthUser } from '../types';
 import { getApiUrl } from '../lib/api';
 
+const ADMIN_EMAIL = 'admin@nextlevelevents.com';
+
 function decodeJwtRole(token: string) {
   try {
     const [, payload] = token.split('.');
@@ -13,6 +15,30 @@ function decodeJwtRole(token: string) {
   } catch {
     return null;
   }
+}
+
+function isAdminEmail(email: string | undefined) {
+  return typeof email === 'string' && email.toLowerCase() === ADMIN_EMAIL;
+}
+
+function resolveRole(user: Partial<AuthUser> | null | undefined, token?: string | null) {
+  const decodedRole = token ? decodeJwtRole(token) : null;
+  const email = typeof user?.email === 'string' ? user.email : '';
+  return user?.role === 'admin' || decodedRole === 'admin' || isAdminEmail(email) ? 'admin' : 'user';
+}
+
+function normalizeUser(user: AuthUser, token?: string) {
+  const normalizedRole = resolveRole(user, token);
+  return {
+    ...user,
+    role: normalizedRole,
+    name: user.name?.trim() || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
+    avatar: user.avatar?.trim() || user.photoURL?.trim() || '',
+    wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((id) => String(id)) : [],
+    firstName: user.firstName?.trim() || '',
+    lastName: user.lastName?.trim() || '',
+    photoURL: user.photoURL?.trim() || '',
+  } as AuthUser;
 }
 
 export interface AuthRedirect {
@@ -88,11 +114,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (savedUser) {
       try {
         initialUser = JSON.parse(savedUser) as AuthUser;
+        const restoredRole = resolveRole(initialUser, token);
+        const restoredUser = normalizeUser({ ...initialUser, role: restoredRole }, token);
         setState(prev => ({
           ...prev,
-          user: initialUser,
+          user: restoredUser,
           isLoggedIn: true,
-          isAdmin: initialUser?.role === 'admin',
+          isAdmin: restoredRole === 'admin',
           isLoading: true,
           initialized: false,
           authRedirect: null,
@@ -115,16 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return payload.user as AuthUser;
       })
       .then((user) => {
-        const normalizedUser: AuthUser = {
-          ...user,
-          role: user.role || 'user',
-          name: user.name?.trim() || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.email,
-          avatar: user.avatar?.trim() || user.photoURL?.trim() || '',
-          wishlist: Array.isArray(user.wishlist) ? user.wishlist.map((id) => String(id)) : [],
-          firstName: user.firstName?.trim() || '',
-          lastName: user.lastName?.trim() || '',
-          photoURL: user.photoURL?.trim() || '',
-        };
+        const normalizedUser = normalizeUser(user as AuthUser, token);
         localStorage.setItem('user', JSON.stringify(normalizedUser));
         console.log('AuthContext restored user:', normalizedUser);
         setState({
@@ -161,19 +180,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = useCallback((user: AuthUser, token?: string) => {
-    const isAdmin = user.role === 'admin';
+    const normalizedUser = normalizeUser(user, token);
 
     if (token) {
       localStorage.setItem('token', token);
     }
 
-    localStorage.setItem('user', JSON.stringify(user));
+    localStorage.setItem('user', JSON.stringify(normalizedUser));
 
     setState((prev) => ({
       ...prev,
-      user,
+      user: normalizedUser,
       isLoggedIn: true,
-      isAdmin,
+      isAdmin: normalizedUser.role === 'admin',
       tab: 'success',
       isOpen: false,
       isLoading: false,
@@ -209,14 +228,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUser = useCallback((user: Partial<AuthUser>) => {
     setState((prev) => {
-      const nextUser = { ...(prev.user ?? {}), ...user } as AuthUser;
-      const isAdmin = typeof nextUser.role === 'string' ? nextUser.role === 'admin' : prev.isAdmin;
+      const token = localStorage.getItem('token');
+      const nextUser = normalizeUser({ ...(prev.user ?? {}), ...user } as AuthUser, token ?? undefined);
       localStorage.setItem('user', JSON.stringify(nextUser));
       return {
         ...prev,
         user: nextUser,
         isLoggedIn: true,
-        isAdmin,
+        isAdmin: nextUser.role === 'admin',
       };
     });
   }, []);

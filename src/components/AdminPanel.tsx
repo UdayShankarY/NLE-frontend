@@ -2,14 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Menu, Crown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import type { AdminView, AuthUser } from '../types';
-import { Sidebar, DashboardView, CategoriesView, ProductsView, SlidersView, UsersView, TermsView } from './admin';
+import { Sidebar, DashboardView, CategoriesView, ProductsView, AddonsView, ActivitiesView, SlidersView, UsersView, TermsView } from './admin';
 
 interface AdminPanelProps {
   user: AuthUser;
-  onLogout: () => void;
 }
 
-export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
+export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -21,6 +20,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
         return 'categories';
       case 'products':
         return 'products';
+      case 'addons':
+        return 'addons';
+      case 'activities':
+        return 'activities';
       case 'sliders':
         return 'sliders';
       case 'orders':
@@ -41,6 +44,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
       dashboard: '/admin',
       categories: '/admin/categories',
       products: '/admin/products',
+      addons: '/admin/addons',
+      activities: '/admin/activities',
       sliders: '/admin/sliders',
       orders: '/admin/orders',
       users: '/admin/users',
@@ -65,9 +70,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <div className={`fixed inset-y-0 left-0 z-[200] transition-transform duration-200 md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Sidebar currentView={view} onViewChange={navigateToView} user={user} onLogout={onLogout} />
+    <div className="flex h-full bg-gray-50">
+      <div className="hidden md:flex w-60 flex-shrink-0">
+        <Sidebar currentView={view} onViewChange={navigateToView} user={user} />
+      </div>
+      <div className={`fixed inset-y-0 left-0 z-[200] w-60 transition-transform duration-200 md:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <Sidebar currentView={view} onViewChange={navigateToView} user={user} />
       </div>
       {sidebarOpen && (
         <div
@@ -75,7 +83,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      <div className="flex min-h-screen flex-1 flex-col">
+      <div className="flex h-full flex-1 flex-col overflow-hidden">
         <div className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-border bg-white px-4 shadow-sm md:px-7">
           <button
             className="mr-2 flex items-center justify-center rounded-md p-2 text-ink hover:bg-black/5 md:hidden"
@@ -94,10 +102,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, onLogout }) => {
             </span>
           </div>
         </div>
-        <div className="flex-1 p-4 md:p-7">
+        <div className="flex-1 overflow-auto p-4 md:p-7">
           {view === 'dashboard' && <DashboardView />}
           {view === 'categories' && <CategoriesView />}
           {view === 'products' && <ProductsView />}
+          {view === 'addons' && <AddonsView />}
+          {view === 'activities' && <ActivitiesView />}
           {view === 'sliders' && <SlidersView />}
           {view === 'orders' && <div className="adm-section"><h2>Orders - Coming Soon</h2></div>}
           {view === 'users' && <UsersView />}

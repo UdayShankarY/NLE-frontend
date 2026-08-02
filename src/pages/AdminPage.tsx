@@ -150,10 +150,6 @@ export default function AdminPage() {
       ) : (
         <AdminPanel
           user={auth.user}
-          onLogout={() => {
-            auth.logout();
-            navigate('/');
-          }}
         />
       )}
     </MainLayout>

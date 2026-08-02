@@ -120,6 +120,8 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
+  const isAdmin = auth.user?.role === 'admin';
+
   const userButton = auth.isLoggedIn ? (
     <div ref={accountRef} className="relative">
       <button
@@ -148,9 +150,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/profile'); }}>
             <User size={17} /> {t.profile || 'Profile'}
           </button>
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/wishlist'); }}>
-            <Gift size={17} /> Wishlist
-          </button>
+          {!isAdmin && (
+            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/wishlist'); }}>
+              <Gift size={17} /> Wishlist
+            </button>
+          )}
           <div className="mt-1 border-t border-current/10 px-3 pt-2">
             <div className="mb-2 flex items-center gap-3 text-sm"><Moon size={17} /> {t.theme_label || 'Theme'}</div>
             <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, FolderTree, Gift, Images, Package, Users, FileText, LogOut, PartyPopper } from 'lucide-react';
+import { LayoutDashboard, FolderTree, Gift, Images, Package, Users, FileText, PartyPopper, Sparkles } from 'lucide-react';
 import type { AdminView, AuthUser } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -7,6 +7,8 @@ const NAV_ITEMS: { view: AdminView; icon: React.ElementType; label: string }[] =
   { view: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { view: 'categories', icon: FolderTree, label: 'Categories' },
   { view: 'products', icon: Gift, label: 'Products' },
+  { view: 'addons', icon: Sparkles, label: 'Add-ons' },
+  { view: 'activities', icon: PartyPopper, label: 'Activities' },
   { view: 'sliders', icon: Images, label: 'Hero Sliders' },
   { view: 'orders', icon: Package, label: 'Orders' },
   { view: 'users', icon: Users, label: 'Users' },
@@ -17,10 +19,9 @@ interface SidebarProps {
   currentView: AdminView;
   onViewChange: (view: AdminView) => void;
   user: AuthUser;
-  onLogout: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, user, onLogout }) => (
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, user }) => (
   <div className="flex h-full w-60 flex-shrink-0 flex-col border-r border-border bg-white">
     <div className="flex items-center gap-2 border-b border-border px-5 py-5">
       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-purple/10 text-lg">
@@ -53,12 +54,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, use
         <div className="truncate text-sm font-semibold text-ink">{user.firstName} {user.lastName}</div>
         <div className="text-xs text-ink-muted">Administrator</div>
       </div>
-      <button
-        className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-ink-muted hover:bg-red-50 hover:text-red-600"
-        onClick={onLogout}
-      >
-        <LogOut size={16} /> Logout
-      </button>
     </div>
   </div>
 );

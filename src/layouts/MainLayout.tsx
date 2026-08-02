@@ -98,10 +98,12 @@ export default function MainLayout({
   const navigate = useNavigate();
   const location = useLocation();
   const handledAuthRedirect = useRef(false);
+  const handledAdminLanding = useRef(false);
 
   useEffect(() => {
     if (!auth.initialized || !auth.isLoggedIn || auth.tab !== 'success') {
       handledAuthRedirect.current = false;
+      handledAdminLanding.current = false;
       return;
     }
 
@@ -128,6 +130,12 @@ export default function MainLayout({
       return;
     }
 
+    if (auth.isAdmin && !handledAdminLanding.current && !location.pathname.startsWith('/admin')) {
+      handledAdminLanding.current = true;
+      navigate('/admin', { replace: true });
+      return;
+    }
+
     if (handledAuthRedirect.current) return;
 
     handledAuthRedirect.current = true;
@@ -146,7 +154,7 @@ export default function MainLayout({
       {hideShell ? (
         children
       ) : (
-        <>
+        <div className="min-h-screen flex flex-col">
           <Header
             auth={auth}
             t={t as Translations}
@@ -157,7 +165,7 @@ export default function MainLayout({
             categories={categories}
             onSelectCategory={onSelectCategory}
           />
-          {children}
+          <main className="flex-1 overflow-hidden">{children}</main>
           <Footer t={t as any} onPageOpen={onTermsPageOpen} />
           <AssistantPanel
             open={assistantOpen}
@@ -182,7 +190,7 @@ export default function MainLayout({
             />
           )}
           <AuthModal isOpen={authModalOpen} tab={authModalTab} onClose={onCloseAuth} onSetTab={onSetAuthTab} onLogin={onLogin || internalHandleLogin} />
-        </>
+        </div>
       )}
     </>
   );
