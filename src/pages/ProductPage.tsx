@@ -10,6 +10,8 @@ import { useLanguage } from '../hooks/useLanguage';
 import { useProducts } from '../hooks/useProducts';
 import { trackViewItem } from '../lib/analytics';
 import { useAppBack } from '../hooks/useAppBack';
+import { getApiUrl } from '../lib/api';
+import type { AdminProduct, BookingAddonSnapshot } from '../types';
 
 export default function ProductPage() {
   const navigate = useNavigate();
@@ -19,7 +21,9 @@ export default function ProductPage() {
   const { t } = useLanguage();
   const auth = useAuth();
   const cart = useCart();
-  const { grouped, categories, loading } = useProducts();
+  const { grouped, categories, loading: productsLoading } = useProducts();
+  const [product, setProduct] = useState<AdminProduct | null>(null);
+  const [productLoading, setProductLoading] = useState(Boolean(id));
 
   const cartOpen = location.pathname === '/cart';
   const goBackToHome = useAppBack('/');
@@ -47,20 +51,56 @@ export default function ProductPage() {
     navigate(routes[pageKey]);
   };
 
-  const product = React.useMemo(() => {
+  useEffect(() => {
+    if (!id) {
+      setProduct(null);
+      setProductLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    setProductLoading(true);
+
+    fetch(getApiUrl(`/api/products/${id}`))
+      .then(async (res) => {
+        if (!res.ok) throw new Error('Product not found');
+        const data = await res.json();
+        if (isMounted) {
+          setProduct(data);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setProduct(null);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setProductLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  const fallbackProduct = React.useMemo(() => {
     return Object.values(grouped)
       .flat()
       .find((item) => item._id === id) || null;
   }, [grouped, id]);
 
+  const resolvedProduct = product || fallbackProduct;
+
   const fallbackPath = typeof location.state?.from === 'string'
     ? location.state.from
-    : product
-      ? `/category/${encodeURIComponent(product.categoryName)}${product.subcategory ? `/${encodeURIComponent(product.subcategory)}` : ''}`
+    : resolvedProduct
+      ? `/category/${encodeURIComponent(resolvedProduct.categoryName)}${resolvedProduct.subcategory ? `/${encodeURIComponent(resolvedProduct.subcategory)}` : ''}`
       : '/';
   const goBack = useAppBack(fallbackPath);
 
-  const handleBook = (selectedProduct: typeof product, _method?: 'razorpay' | 'whatsapp', selectedAddOns?: { id?: string; name: string; price: number }[]) => {
+  const handleBook = (selectedProduct: typeof resolvedProduct, _method?: 'razorpay' | 'whatsapp', selectedAddOns?: BookingAddonSnapshot[]) => {
     if (!selectedProduct) return;
     if (!auth.isLoggedIn) {
       auth.setAuthRedirect({
@@ -79,21 +119,21 @@ export default function ProductPage() {
   };
 
   useEffect(() => {
-    if (product) {
+    if (resolvedProduct) {
       trackViewItem(
-        product._id,
-        product.name,
-        product.categoryName,
-        product.price
+        resolvedProduct._id,
+        resolvedProduct.name,
+        resolvedProduct.categoryName,
+        resolvedProduct.price
       );
     }
-  }, [product]);
+  }, [resolvedProduct]);
 
-  const content = loading ? (
+  const content = productsLoading || productLoading ? (
     <LoadingState label="Loading package..." />
-  ) : product ? (
+  ) : resolvedProduct ? (
     <ProductDetailPage
-      product={product}
+      product={resolvedProduct}
       onBack={goBack}
       onBook={handleBook}
     />

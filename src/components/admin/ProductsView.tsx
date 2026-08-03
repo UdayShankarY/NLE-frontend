@@ -283,11 +283,19 @@ export const ProductsView = () => {
       .filter((addon) => selectedAddonIds.includes(addon._id))
       .map((addon) => ({ id: addon._id, name: addon.name, price: addon.price }));
 
+    const existingInlineAddOns = Array.isArray(form.addOns) ? form.addOns : [];
+    const mergedAddOns = [
+      ...selectedSnapshots,
+      ...existingInlineAddOns.filter((inline) =>
+        !selectedSnapshots.some((addon) => addon.name.trim().toLowerCase() === inline.name.trim().toLowerCase())
+      ),
+    ];
+
     const payload = {
       ...form,
       categoryName: selectedCat?.name || "",
       addons: selectedAddonIds,
-      addOns: selectedSnapshots,
+      addOns: mergedAddOns,
     };
 
     if (editing) {

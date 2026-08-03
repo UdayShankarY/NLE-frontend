@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, Zap, Lock, Palette, Minus, Plus, Share2 } from 'lucide-react';
-import type { AdminAddon, AdminProduct, BookingAddonSnapshot } from '../types';
+import { ChevronLeft, ChevronRight, Check, ChevronDown, ChevronUp, Zap, Lock, Palette, Share2 } from 'lucide-react';
+import type { AdminProduct, BookingAddonSnapshot } from '../types';
 import { cn } from '../lib/utils';
 import { BackButton } from './BackButton';
 import { ShareDialog } from './shared/ShareDialog';
 import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
 import { useLanguage } from '../hooks/useLanguage';
+import { GlobalAddonsActivitiesModule } from './GlobalAddonsActivitiesModule';
 
 interface Props {
   product: AdminProduct;
@@ -81,8 +82,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
   const [activeIdx, setActiveIdx] = useState(0);
   const [termsOpen, setTermsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  const [addonSearch, setAddonSearch] = useState('');
-  const [selectedAddOns, setSelectedAddOns] = useState<BookingAddonSnapshot[]>([]);
+  const [globalSelections, setGlobalSelections] = useState<{ addons: BookingAddonSnapshot[]; activities: BookingAddonSnapshot[] }>({ addons: [], activities: [] });
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -109,54 +109,21 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
     touchStartY.current = null;
   };
 
-  const rawProductAddons = Array.isArray(product.addons) && product.addons.length > 0
-    ? product.addons
-    : Array.isArray(product.addOns) && product.addOns.length > 0
-      ? product.addOns
-      : [];
-
-  const activeProductAddons = rawProductAddons
-    .filter((addon): addon is AdminAddon | { name: string; price: number; image?: string; id?: string } => {
-      if (typeof addon === 'string' || !addon) return false;
-      if ('active' in addon && addon.active === false) return false;
-      return typeof addon.name === 'string' && typeof addon.price === 'number';
-    })
-    .map((addon) => ({
-      id: 'id' in addon && addon.id ? addon.id : '_id' in addon && addon._id ? addon._id : addon.name,
-      name: addon.name,
-      price: addon.price,
-      image: 'image' in addon ? addon.image : undefined,
-    }));
-
-  const filteredAddons = activeProductAddons.filter((addon) => {
-    const query = addonSearch.trim().toLowerCase();
-    if (!query) return true;
-    return addon.name.toLowerCase().includes(query);
-  });
-
-  // debug toggle via query param: ?debugAddons=1
   const location = useLocation();
   const showDebugAddons = new URLSearchParams(location.search).get('debugAddons') === '1';
 
-  const totalPrice = product.price + selectedAddOns.reduce((sum, addon) => sum + (addon.price || 0) * (addon.qty || 0), 0);
+  const selectedGlobalAddons = globalSelections.addons.map((item) => ({ ...item, qty: 1, kind: 'addon' as const }));
+  const selectedGlobalActivities = globalSelections.activities.map((item) => ({ ...item, qty: 1, kind: 'activity' as const }));
+  const bookingSelections = [...selectedGlobalAddons, ...selectedGlobalActivities];
+  const totalPrice = product.price + selectedGlobalAddons.reduce((sum, addon) => sum + (addon.price || 0), 0) + selectedGlobalActivities.reduce((sum, activity) => sum + (activity.price || 0), 0);
 
-  const updateAddonQty = (addon: BookingAddonSnapshot, delta: number) => {
-    setSelectedAddOns((prev) => {
-      const existing = prev.find((item) => item.id === addon.id || item.name === addon.name);
-      const nextQty = (existing?.qty || 0) + delta;
-      if (nextQty <= 0) {
-        return prev.filter((item) => !(item.id === addon.id || item.name === addon.name));
-      }
-      if (existing) {
-        return prev.map((item) =>
-          item.id === existing.id || item.name === existing.name ? { ...item, qty: nextQty } : item
-        );
-      }
-      return [...prev, { ...addon, qty: nextQty }];
+  const handleGlobalSelectionChange = useCallback((addons: BookingAddonSnapshot[], activities: BookingAddonSnapshot[]) => {
+    setGlobalSelections({
+      addons: addons.map((item) => ({ ...item, qty: 1 })),
+      activities: activities.map((item) => ({ ...item, qty: 1 })),
     });
-  };
+  }, []);
 
-  const clearSelectedAddons = () => setSelectedAddOns([]);
 
 
   return (
@@ -266,13 +233,13 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <BookButton onClick={() => {
               trackBookingStarted();
-              onBook(product, 'razorpay', selectedAddOns);
+              onBook(product, 'razorpay', bookingSelections);
             }} className="flex-1" />
             <WhatsAppButton onClick={() => {
               trackWhatsappClick();
 
               setTimeout(() => {
-                onBook(product, "whatsapp", selectedAddOns);
+                onBook(product, "whatsapp", bookingSelections);
               }, 500);
             }} className="flex-1" />
             <button
@@ -299,33 +266,42 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             </button>
           </div>
 
-          {(selectedAddOns.length > 0 || true) && (
-            <div className="mt-4 rounded-card border border-border bg-gray-50 p-4">
-              <div className="mb-2 flex items-center justify-between text-sm text-ink-muted">
-                <span>Base package</span>
-                <span>Rs.{product.price.toLocaleString()}</span>
-              </div>
-              {selectedAddOns.length > 0 && (
-                <div className="space-y-2 border-t border-border pt-3 text-sm text-ink">
-                  {selectedAddOns.map((addon) => (
-                    <div key={addon.id || addon.name} className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="font-medium text-ink">{addon.name}</div>
-                        <div className="text-xs text-ink-muted">Qty: {addon.qty || 0}</div>
-                      </div>
-                      <div className="text-right text-sm font-semibold text-ink">
-                        Rs.{((addon.price || 0) * (addon.qty || 0)).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-base font-bold text-ink">
-                <span>Total</span>
-                <span>{totalPrice.toLocaleString()}</span>
-              </div>
+          <div className="mt-4 rounded-card border border-border bg-gray-50 p-4">
+            <div className="mb-2 flex items-center justify-between text-sm text-ink-muted">
+              <span>Base package</span>
+              <span>Rs.{product.price.toLocaleString()}</span>
             </div>
-          )}
+            {(globalSelections.addons.length > 0 || globalSelections.activities.length > 0) && (
+              <div className="space-y-2 border-t border-border pt-3 text-sm text-ink">
+                {globalSelections.addons.map((addon) => (
+                  <div key={addon.id || addon.name} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">{addon.name}</div>
+                      <div className="text-xs text-ink-muted">Shared add-on</div>
+                    </div>
+                    <div className="text-right text-sm font-semibold text-ink">
+                      Rs.{(addon.price || 0).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+                {globalSelections.activities.map((activity) => (
+                  <div key={activity.id || activity.name} className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">{activity.name}</div>
+                      <div className="text-xs text-ink-muted">Shared activity</div>
+                    </div>
+                    <div className="text-right text-sm font-semibold text-ink">
+                      Rs.{(activity.price || 0).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-base font-bold text-ink">
+              <span>Total</span>
+              <span>Rs.{totalPrice.toLocaleString()}</span>
+            </div>
+          </div>
 
           <div className="mt-6 flex flex-wrap gap-4 text-xs text-ink-muted">
             <span className="flex items-center gap-1"><Zap size={13} /> Same Day Setup</span>
@@ -361,81 +337,18 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
           </div>
         )}
 
+        <GlobalAddonsActivitiesModule onSelectionChange={handleGlobalSelectionChange} />
+
         {/* Debug panel (enable by appending ?debugAddons=1 to URL) */}
         {showDebugAddons && (
           <div className="mt-4 rounded-card border border-yellow-200 bg-yellow-50 p-3 text-sm text-ink">
-            <div className="font-semibold">Debug: add-ons payload</div>
-            <div className="mt-1 text-xs text-ink-muted">rawProductAddons.length: {rawProductAddons.length}</div>
-            <div className="text-xs text-ink-muted">activeProductAddons.length: {activeProductAddons.length}</div>
-            <pre className="mt-2 max-h-40 overflow-auto text-xs">{JSON.stringify(rawProductAddons, null, 2)}</pre>
+            <div className="font-semibold">Debug: shared add-ons payload</div>
+            <div className="mt-1 text-xs text-ink-muted">selected global add-ons: {globalSelections.addons.length}</div>
+            <div className="text-xs text-ink-muted">selected global activities: {globalSelections.activities.length}</div>
+            <pre className="mt-2 max-h-40 overflow-auto text-xs">{JSON.stringify(globalSelections, null, 2)}</pre>
           </div>
         )}
 
-        {activeProductAddons.length > 0 && (
-          <div>
-            <div className="mb-4 flex items-center gap-2">
-              <span className="text-xl">✨</span>
-              <h2 className="text-lg font-bold text-ink">{t.available_addons || 'Available Add-Ons'}</h2>
-            </div>
-            <div className="mb-4 flex flex-col gap-3 rounded-card border border-border bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
-              <input
-                value={addonSearch}
-                onChange={(e) => setAddonSearch(e.target.value)}
-                placeholder="Search add-ons"
-                className="w-full rounded-lg border border-border bg-gray-50 px-3 py-2 text-sm outline-none focus:border-brand-purple-light focus:ring-2 focus:ring-brand-purple-light sm:max-w-xs"
-              />
-              <button
-                type="button"
-                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-ink transition-colors hover:bg-gray-50"
-                onClick={clearSelectedAddons}
-              >
-                Clear selected
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {filteredAddons.map((a, i) => {
-                const quantity = selectedAddOns.find((item) => item.id === a.id || item.name === a.name)?.qty || 0;
-                return (
-                  <div key={a.id || `${a.name}-${i}`} className="flex min-h-[240px] flex-col overflow-hidden rounded-card border border-border bg-white">
-                    <div className="h-36 overflow-hidden bg-gray-100">
-                      <img src={a.image} alt={a.name} className="h-full w-full object-cover" />
-                    </div>
-                    <div className="flex flex-1 flex-col gap-3 p-4">
-                      <div>
-                        <div className="text-sm font-semibold text-ink">{a.name}</div>
-                        <div className="mt-2 text-base font-bold text-brand-purple">+Rs.{a.price.toLocaleString()}</div>
-                      </div>
-                      <div className="mt-auto flex items-center justify-between rounded-lg border border-border bg-gray-50 px-3 py-2">
-                        <button
-                          type="button"
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-ink-muted transition hover:bg-gray-100"
-                          onClick={() => updateAddonQty(a, -1)}
-                          aria-label={`Decrease ${a.name}`}
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <div className="text-sm font-semibold text-ink">{quantity}</div>
-                        <button
-                          type="button"
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-ink-muted transition hover:bg-gray-100"
-                          onClick={() => updateAddonQty(a, 1)}
-                          aria-label={`Increase ${a.name}`}
-                        >
-                          <Plus size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            {filteredAddons.length === 0 && (
-              <div className="rounded-card border border-dashed border-border bg-white px-4 py-6 text-sm text-ink-muted">
-                No add-ons match “{addonSearch}”.
-              </div>
-            )}
-          </div>
-        )}
 
         <div>
           <div className="mb-4 flex items-center gap-2">
@@ -480,8 +393,8 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             <div className="mt-1 text-sm text-ink-muted">Chat with us on WhatsApp to confirm your date and customise your experience.</div>
           </div>
           <div className="flex w-full flex-shrink-0 gap-3 sm:w-auto">
-            <BookButton onClick={() => onBook(product, 'razorpay', selectedAddOns)} className="flex-1 sm:flex-none" />
-            <WhatsAppButton onClick={() => onBook(product, 'whatsapp', selectedAddOns)} className="flex-1 sm:flex-none" />
+            <BookButton onClick={() => onBook(product, 'razorpay', bookingSelections)} className="flex-1 sm:flex-none" />
+            <WhatsAppButton onClick={() => onBook(product, 'whatsapp', bookingSelections)} className="flex-1 sm:flex-none" />
           </div>
         </div>
 

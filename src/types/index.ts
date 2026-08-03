@@ -168,6 +168,33 @@ export interface AdminAddon {
   updatedAt: string;
 }
 
+export interface CatalogAddon {
+  _id: string;
+  name: string;
+  description?: string;
+  price: number;
+  image?: string;
+  active?: boolean;
+  category?: string;
+}
+
+export interface CatalogActivity {
+  _id: string;
+  name: string;
+  description?: string;
+  image?: string;
+  price?: number;
+  active?: boolean;
+  category?: string;
+}
+
+export interface CatalogSelectionItem {
+  id: string;
+  name: string;
+  price: number;
+  kind: 'addon' | 'activity';
+}
+
 export type AuthTab = 'login' | 'register' | 'phone' | 'forgot' | 'success';
 
 export interface BookingAddonSnapshot {
@@ -175,6 +202,7 @@ export interface BookingAddonSnapshot {
   name: string;
   price: number;
   qty?: number;
+  kind?: 'addon' | 'activity';
 }
 
 export interface BookingDetails {
@@ -230,6 +258,7 @@ export interface AdminProduct {
   inclusions: string[];
   addOns: { name: string; price: number }[];
   addons?: (string | AdminAddon)[];
+  activities?: Array<string | { name?: string; description?: string; image?: string; active?: boolean }>;
   image: string;
   moreImages: string[];
   badge?: string;

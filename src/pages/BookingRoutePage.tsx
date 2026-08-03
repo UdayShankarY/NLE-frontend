@@ -63,12 +63,10 @@ export default function BookingRoutePage() {
   const handleBookingConfirm = (
     selectedProduct: AdminProduct,
     bookingDetails: BookingDetails,
-    method: 'razorpay' | 'whatsapp' = 'razorpay'
+    _method: 'razorpay' | 'whatsapp' = 'razorpay'
   ) => {
-    if (method === 'razorpay') {
-      cart.addItem(selectedProduct, bookingDetails);
-      navigate('/cart');
-    }
+    cart.addItem(selectedProduct, bookingDetails);
+    navigate('/cart');
   };
 
   const content = loading ? (

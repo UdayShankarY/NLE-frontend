@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthTab, AuthUser } from '../types';
 import { getApiUrl } from '../lib/api';
 
@@ -85,9 +85,11 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>(initialAuthState);
+  const hasRestoredAuth = useRef(false);
 
   useEffect(() => {
-    if (state.initialized) return;
+    if (hasRestoredAuth.current) return;
+    hasRestoredAuth.current = true;
 
     const savedUser = localStorage.getItem('user');
     const token = localStorage.getItem('token');
@@ -163,7 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.removeItem('user');
         setState(prev => ({ ...prev, user: null, isLoggedIn: false, isAdmin: false, isLoading: false, initialized: true, authRedirect: null }));
       });
-  }, [state.initialized]);
+  }, []);
 
   const open = useCallback((tab: AuthTab = 'login') => {
     setState((s) => ({ ...s, isOpen: true, tab }));

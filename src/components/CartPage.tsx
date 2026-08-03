@@ -32,11 +32,15 @@ export const CartPage: React.FC<CartPageProps> = ({
       }
       return i.bookingDetails.map((b, idx) => {
         const label = i.bookingDetails.length > 1 ? ' — Booking ' + (idx + 1) : '';
+        const addOnLines = b.addOns.length > 0
+          ? [String.fromCodePoint(0x1F4CC) + ' *Selected Add-ons / Activities:*', ...b.addOns.map(addon => `    - ${addon.name} (+Rs.${addon.price.toLocaleString()})`)]
+          : [];
         const parts = [
           D,
           String.fromCodePoint(0x1F4E6) + ' *Package' + label + '*',
           '    ' + i.name,
           String.fromCodePoint(0x1F4B0) + ' *Price:* Rs.' + i.price.toLocaleString() + (i.originalPrice ? '  ~Rs.' + i.originalPrice.toLocaleString() + '~' : ''),
+          ...addOnLines,
           String.fromCodePoint(0x1F4C5) + ' *Event Date:* ' + b.eventDate + ' at ' + b.eventTime,
           String.fromCodePoint(0x1F4CD) + ' *Venue:* ' + b.location,
           String.fromCodePoint(0x1F4DE) + ' *Contact:* +91 ' + b.mobile,

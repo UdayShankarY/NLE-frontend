@@ -504,6 +504,7 @@ export const PhoneForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUse
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState(0);
   const [phoneErr, setPhoneErr] = useState('');
+  const [otpError, setOtpError] = useState('');
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const boxRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -532,7 +533,11 @@ export const PhoneForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUse
   };
 
   const verify = () => {
-    if (otp.join('').length < 6) { alert('Please enter the 6-digit OTP'); return; }
+    if (otp.join('').length < 6) {
+      setOtpError('Please enter the 6-digit OTP');
+      return;
+    }
+    setOtpError('');
     onSuccess({ id: `u_${Date.now()}`, firstName: 'User', lastName: '', email: `+91${phone}`, role: 'user' });
   };
 
@@ -560,7 +565,7 @@ export const PhoneForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUse
 
       {otpSent && (
         <>
-          <Field label="Enter OTP" error="">
+          <Field label="Enter OTP" error={otpError}>
             <div className="flex gap-2">
               {otp.map((v, i) => (
                 <input
