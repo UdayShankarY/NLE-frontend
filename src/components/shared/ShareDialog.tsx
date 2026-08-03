@@ -15,8 +15,8 @@ const shareButtons = [
   {
     label: 'WhatsApp',
     icon: MessageCircle,
-    href: (url: string, title: string) =>
-      `https://api.whatsapp.com/send?text=${encodeURIComponent(`${title}\n${url}`)}`,
+    href: (url: string) =>
+      `https://api.whatsapp.com/send?text=${encodeURIComponent(url)}`,
     className: 'bg-emerald-600 text-white',
   },
   {

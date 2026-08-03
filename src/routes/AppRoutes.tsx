@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import App from '../App';
 import ProductPage from '../pages/ProductPage';
 import BookingRoutePage from '../pages/BookingRoutePage';
+import OrderDetailsPage from '../pages/OrderDetailsPage.tsx';
 import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
 import WishlistPage from '../pages/WishlistPage';
@@ -49,6 +50,7 @@ export default function AppRoutes() {
         <Route path="/category/:category/:subcategory" element={<App />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/booking/:id" element={<BookingRoutePage />} />
+        <Route path="/orders/:id" element={<OrderDetailsPage />} />
         <Route path="/cart" element={<App />} />
         <Route path="/terms" element={<TermsPageRoute />} />
         <Route path="/privacy" element={<TermsPageRoute />} />

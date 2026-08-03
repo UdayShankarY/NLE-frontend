@@ -12,6 +12,7 @@ import { trackViewItem } from '../lib/analytics';
 import { useAppBack } from '../hooks/useAppBack';
 import { getApiUrl } from '../lib/api';
 import type { AdminProduct, BookingAddonSnapshot } from '../types';
+import { SeoHead } from '../components/SeoHead';
 
 export default function ProductPage() {
   const navigate = useNavigate();
@@ -144,43 +145,51 @@ export default function ProductPage() {
   );
 
   return (
-    <MainLayout
-      auth={auth}
-      t={t}
-      onAssistantOpen={() => setAssistantOpen(true)}
-      onLogoClick={() => navigate('/')}
-      showAssistantButton={false}
-      showMobileMenu
-      categories={categories}
-      onSelectCategory={() => navigate('/')}
-
-      assistantOpen={assistantOpen}
-      assistantMessages={messages}
-      assistantInput={input}
-      assistantInputRef={inputRef}
-      onAssistantClose={() => setAssistantOpen(false)}
-      onAssistantInputChange={setInput}
-      onAssistantSubmit={sendMessage}
-
-      cartOpen={cartOpen}
-      cartItems={cart.items}
-      cartTotal={cart.total}
-      onCartRemove={cart.removeItem}
-      onCartUpdateQty={cart.updateQty}
-      onCartClear={cart.clearCart}
-
-      onCartClose={() => {
-        goBackToHome();
-      }}
-
-      onCartLoginClick={() => auth.open('login')}
-      onTermsPageOpen={handleTermsPageOpen}
-      onCloseAuth={auth.close}
-      onSetAuthTab={auth.setTab}
-      authModalOpen={auth.isOpen}
-      authModalTab={auth.tab}
-    >
-      {content}
-    </MainLayout>
+    <>
+      {resolvedProduct && (
+        <SeoHead
+          title={resolvedProduct.name}
+          description={resolvedProduct.description}
+          image={resolvedProduct.image}
+          url={`${window.location.origin}/product/${resolvedProduct._id}`}
+          type="product"
+          siteName="TheDecorParty"
+        />
+      )}
+      <MainLayout
+        auth={auth}
+        t={t}
+        onAssistantOpen={() => setAssistantOpen(true)}
+        onLogoClick={() => navigate('/')}
+        showAssistantButton={false}
+        showMobileMenu
+        categories={categories}
+        onSelectCategory={() => navigate('/')}
+        assistantOpen={assistantOpen}
+        assistantMessages={messages}
+        assistantInput={input}
+        assistantInputRef={inputRef}
+        onAssistantClose={() => setAssistantOpen(false)}
+        onAssistantInputChange={setInput}
+        onAssistantSubmit={sendMessage}
+        cartOpen={cartOpen}
+        cartItems={cart.items}
+        cartTotal={cart.total}
+        onCartRemove={cart.removeItem}
+        onCartUpdateQty={cart.updateQty}
+        onCartClear={cart.clearCart}
+        onCartClose={() => {
+          goBackToHome();
+        }}
+        onCartLoginClick={() => auth.open('login')}
+        onTermsPageOpen={handleTermsPageOpen}
+        onCloseAuth={auth.close}
+        onSetAuthTab={auth.setTab}
+        authModalOpen={auth.isOpen}
+        authModalTab={auth.tab}
+      >
+        {content}
+      </MainLayout>
+    </>
   );
 }

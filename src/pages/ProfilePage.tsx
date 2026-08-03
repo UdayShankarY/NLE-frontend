@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { KeyRound, LogOut, Mail, MapPin, Package, Phone, User } from 'lucide-react';
+import { ChevronRight, KeyRound, LogOut, Mail, MapPin, Package, Phone, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '../layouts/MainLayout';
 import { useAuth } from '../hooks/useAuth';
@@ -39,6 +39,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [editing, setEditing] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token || !auth.user) return;
@@ -64,6 +66,27 @@ export default function ProfilePage() {
         setForm(current => ({ ...current, ...normalizedUser }));
       })
       .catch(() => setSaveMessage('Unable to load profile details.'));
+  }, [auth.user?.id]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token || !auth.user?.id) return;
+
+    const loadOrders = async () => {
+      setOrdersLoading(true);
+      try {
+        const response = await fetch(getApiUrl('/api/orders/my'), { headers: { Authorization: `Bearer ${token}` } });
+        if (!response.ok) throw new Error('Unable to load orders');
+        const payload = await response.json();
+        setOrders(Array.isArray(payload) ? payload : []);
+      } catch {
+        setOrders([]);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+
+    void loadOrders();
   }, [auth.user?.id]);
 
   if (!user) {
@@ -224,7 +247,49 @@ export default function ProfilePage() {
 
         <section className="mt-6 rounded-card border border-border bg-white p-5 shadow-card md:p-7">
           <div className="mb-4 flex items-center gap-2"><Package size={20} className="text-brand-purple" /><h2 className="text-lg font-bold text-ink">My Orders</h2></div>
-          <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-ink-muted">You haven&apos;t placed any bookings yet.</div>
+          {ordersLoading ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-ink-muted">Loading your bookings...</div>
+          ) : orders.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-ink-muted">You haven&apos;t placed any bookings yet.</div>
+          ) : (
+            <div className="space-y-4">
+              {orders.map((order) => {
+                const booking = order.booking || {};
+                const product = order.product || {};
+                const amount = Number(order.grandTotal || order.amount || 0);
+                return (
+                  <div key={order._id} className="rounded-xl border border-border bg-gray-50 p-4 md:p-5">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                      <div className="flex items-start gap-3">
+                        {product.image ? (
+                          <img src={product.image} alt={product.name || 'Product'} className="h-16 w-16 rounded-lg object-cover" />
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-brand-purple/10 text-brand-purple">📦</div>
+                        )}
+                        <div>
+                          <div className="text-sm font-semibold text-ink">{order.orderNumber || `Order ${order._id}`}</div>
+                          <div className="text-sm font-bold text-ink">{product.name || order.productName}</div>
+                          <div className="mt-1 text-xs text-ink-muted">Booking date: {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}</div>
+                          <div className="text-xs text-ink-muted">Event date: {booking.eventDate || 'N/A'}</div>
+                        </div>
+                      </div>
+                      <div className="text-left md:text-right">
+                        <div className="text-sm font-semibold text-ink">₹{amount.toLocaleString('en-IN')}</div>
+                        <div className="mt-1 text-xs text-ink-muted">Payment: {order.paymentStatus || 'pending'}</div>
+                        <div className="text-xs text-ink-muted">Status: {order.orderStatus || 'pending'}</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                      <div className="text-xs text-ink-muted">{booking.location ? `Venue: ${booking.location}` : ''}</div>
+                      <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium text-ink hover:bg-white">
+                        View Details <ChevronRight size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="mt-6 flex flex-col gap-3 rounded-card border border-border bg-white p-5 shadow-card sm:flex-row sm:items-center sm:justify-between md:p-7">

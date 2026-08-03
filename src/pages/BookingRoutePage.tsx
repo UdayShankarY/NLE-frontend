@@ -65,8 +65,9 @@ export default function BookingRoutePage() {
     bookingDetails: BookingDetails,
     _method: 'razorpay' | 'whatsapp' = 'razorpay'
   ) => {
-    cart.addItem(selectedProduct, bookingDetails);
-    navigate('/cart');
+    void selectedProduct;
+    void bookingDetails;
+    void _method;
   };
 
   const content = loading ? (

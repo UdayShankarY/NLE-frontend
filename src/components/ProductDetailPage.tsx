@@ -246,11 +246,9 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
               type="button"
               onClick={async () => {
                 const shareUrl = `${window.location.origin}/product/${product._id}`;
-                const shareTitle = product.name;
-                const shareText = product.description || 'Check out this package';
                 if (navigator.share) {
                   try {
-                    await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+                    await navigator.share({ url: shareUrl });
                     return;
                   } catch (error) {
                     // If native share is cancelled or unavailable, fallback to dialog

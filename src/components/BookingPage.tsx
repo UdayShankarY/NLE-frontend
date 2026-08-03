@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BackButton } from './BackButton';
 import type { AdminProduct, BookingAddonSnapshot, BookingDetails } from '../types';
 import { Input } from './ui/Input';
@@ -23,6 +24,11 @@ type PaymentDialogState = {
 
 const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID || '';
 
+const getAuthToken = () => {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('token');
+};
+
 const loadRazorpayScript = () => {
   if (typeof window === 'undefined') return Promise.resolve(false);
   if ((window as any).Razorpay) return Promise.resolve(true);
@@ -46,6 +52,7 @@ const loadRazorpayScript = () => {
 };
 
 export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMethod = 'razorpay', selectedAddOns = [], onBack, onConfirm }) => {
+  const navigate = useNavigate();
   const [form, setForm] = useState<BookingDetails>({
     name: '',
     mobile: '',
@@ -70,6 +77,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   }, [product, preferredMethod, selectedAddOns]);
 
   const createBookingOrder = async (paymentStatus: 'pending' | 'paid' | 'failed' | 'cancelled', paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string; }) => {
+    const token = getAuthToken();
     const payload = {
       productId: product._id,
       productName: product.name,
@@ -79,26 +87,47 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       amount: totalPrice,
       paymentMethod,
       paymentStatus,
+      addons: form.addOns.filter((item) => item.kind !== 'activity'),
+      activities: form.addOns.filter((item) => item.kind === 'activity'),
       bookingDetails: [{ ...form, addOns: form.addOns }],
       razorpayOrderId: paymentMeta?.razorpayOrderId,
       razorpayPaymentId: paymentMeta?.razorpayPaymentId,
       razorpaySignature: paymentMeta?.razorpaySignature,
     };
 
+    console.log('========== ORDER PAYLOAD ==========');
+    console.log(JSON.stringify(payload, null, 2));
+    console.log('Selected Addons:', form.addOns);
+    console.log('Payload Addons:', payload.addons);
+    console.log('Booking Addons:', payload.bookingDetails?.[0]?.addOns);
+    console.log('[BookingPage] CREATE ORDER START', {
+      paymentStatus,
+      paymentMethod,
+      hasAuthToken: Boolean(token),
+      payload,
+    });
+    console.log('[BookingPage] ORDER DATA', payload);
+
     const response = await fetch(getApiUrl('/api/orders'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify(payload),
     });
 
+    const responseBody = await response.json().catch(() => null);
+
     if (!response.ok) {
-      const errorBody = await response.json().catch(() => null);
-      throw new Error(errorBody?.error || 'Unable to save booking.');
+      console.error('[BookingPage] ORDER SAVE FAILED', { status: response.status, responseBody });
+      throw new Error(responseBody?.error || 'Unable to save booking.');
     }
 
-    return await response.json();
+    const savedOrderId = responseBody?._id || responseBody?.id || responseBody?.order?._id || null;
+    console.log('[BookingPage] ORDER SAVE SUCCESS', { status: response.status, responseBody });
+    console.log('[BookingPage] ORDER ID', savedOrderId);
+    return responseBody;
   };
 
   const updateField = (field: keyof BookingDetails, value: string) => {
@@ -164,18 +193,24 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
 
     let paymentHandled = false;
     const savePaymentOutcome = async (status: 'paid' | 'failed' | 'cancelled', meta?: { razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string; }, dialog?: PaymentDialogState) => {
-      if (paymentHandled) return;
+      if (paymentHandled) return null;
       paymentHandled = true;
       setLoading(false);
 
       try {
-        await createBookingOrder(status, meta);
+        const createdOrder = await createBookingOrder(status, meta);
+        if (dialog) {
+          setPaymentDialog(dialog);
+        }
+        return createdOrder;
       } catch (err: any) {
         console.error(`Failed to save ${status} booking:`, err);
-      }
-
-      if (dialog) {
-        setPaymentDialog(dialog);
+        const errorMessage = err?.message || 'Unable to save booking.';
+        setError(`Payment was verified, but the booking could not be saved. ${errorMessage}`);
+        if (dialog) {
+          setPaymentDialog(dialog);
+        }
+        return null;
       }
     };
 
@@ -202,23 +237,54 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
 
       const order = await response.json();
       const options = {
-        key: razorpayKey,
-        amount: order.amount,
-        currency: order.currency,
-        name: 'TheDecorParty',
-        description: `Booking ${product.name}`,
-        order_id: order.id,
-        prefill: {
-          name: form.name,
-          contact: form.mobile,
-        },
-        notes: {
-          productId: product._id,
-          productName: product.name,
-        },
+  key: razorpayKey,
+  amount: order.amount,
+  currency: order.currency,
+  order_id: order.id,
+
+  name: "TheDecorParty",
+  description: `Booking ${product.name}`,
+  image: "https://www.thedecorparty.com/final_logo.jpeg",
+
+  prefill: {
+    name: form.name,
+    email: "",
+    contact: form.mobile,
+  },
+
+  notes: {
+    productId: product._id,
+    productName: product.name,
+    customer: form.name,
+    mobile: form.mobile,
+  },
+
+  theme: {
+    color: "#7C3AED",
+  },
+
+  retry: {
+    enabled: true,
+    max_count: 3,
+  },
+
+  modal: {
+    ondismiss: async () => {
+      await savePaymentOutcome("cancelled", undefined, {
+        kind: "cancelled",
+        title: "Payment Cancelled",
+        message: "Your booking has not been completed.",
+        details: "You can continue where you left off or try payment again anytime.",
+      });
+    },
+  },
         handler: async (paymentResponse: any) => {
-          console.log('SUCCESS HANDLER', paymentResponse);
+          console.log('[BookingPage] PAYMENT SUCCESS', paymentResponse);
           try {
+            console.log('[BookingPage] VERIFY START', {
+              razorpayOrderId: paymentResponse.razorpay_order_id,
+              razorpayPaymentId: paymentResponse.razorpay_payment_id,
+            });
             const verifyResponse = await fetch(getApiUrl('/api/payment/verify'), {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -229,13 +295,16 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
               }),
             });
 
+            const verifyBody = await verifyResponse.json().catch(() => null);
+
             if (!verifyResponse.ok) {
-              const verifyError = await verifyResponse.json().catch(() => null);
-              console.log('VERIFY FAILED', verifyResponse.status, verifyError);
-              throw new Error(verifyError?.error || 'Payment verification failed.');
+              console.log('[BookingPage] VERIFY FAILED', verifyResponse.status, verifyBody);
+              throw new Error(verifyBody?.error || 'Payment verification failed.');
             }
 
-            await savePaymentOutcome('paid', {
+            console.log('[BookingPage] VERIFY SUCCESS', verifyBody);
+
+            const createdOrder = await savePaymentOutcome('paid', {
               razorpayOrderId: paymentResponse.razorpay_order_id,
               razorpayPaymentId: paymentResponse.razorpay_payment_id,
               razorpaySignature: paymentResponse.razorpay_signature,
@@ -243,9 +312,15 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
               kind: 'success',
               title: 'Payment Successful',
               message: 'Your booking has been saved.',
-              details: 'We will confirm your booking details shortly.',
+              details: 'You will be redirected to your booking details shortly.',
             });
             onConfirm(product, bookingPayload, 'razorpay');
+            if (createdOrder?._id || createdOrder?.id) {
+              const orderId = createdOrder._id || createdOrder.id;
+              window.setTimeout(() => {
+                navigate(`/orders/${orderId}`);
+              }, 3500);
+            }
             trackPurchase(`booking-${product._id}-${Date.now()}`, totalPrice);
           } catch (err: any) {
             trackPaymentFailed();
@@ -288,7 +363,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       console.log('CATCH BLOCK', err);
       trackPaymentFailed();
       console.error('Razorpay checkout failed:', err);
-      setError(err?.message || 'Payment failed.');
+      setError(
+  typeof err === "string"
+    ? err
+    : err?.message ||
+      err?.error?.description ||
+      "Payment failed."
+);
       setLoading(false);
     }
   };
