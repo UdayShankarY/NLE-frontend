@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/share/:path*",
+      "destination": "https://thedecorparty-h4f8d7ghgrc8e8du.centralindia-01.azurewebsites.net/share/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

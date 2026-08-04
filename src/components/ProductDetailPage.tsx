@@ -313,7 +313,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
         onClose={() => setShareOpen(false)}
         title={product.name}
         text={product.description || 'Check out this package'}
-        url={`${window.location.origin}/product/${product._id}`}
+        url={`${window.location.origin}/share/product/${product._id}`}
       />
 
       <div className="mt-10 flex flex-col gap-8">
