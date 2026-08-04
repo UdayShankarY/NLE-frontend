@@ -245,7 +245,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             <button
               type="button"
               onClick={async () => {
-                const shareUrl = `${window.location.origin}/product/${product._id}`;
+                const shareUrl = `${window.location.origin}/share/product/${product._id}`;
                 if (navigator.share) {
                   try {
                     await navigator.share({ url: shareUrl });
