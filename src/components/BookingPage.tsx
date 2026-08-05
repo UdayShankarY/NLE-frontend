@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BackButton } from './BackButton';
 import type { AdminProduct, BookingAddonSnapshot, BookingDetails } from '../types';
@@ -6,6 +6,7 @@ import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getApiUrl } from '../lib/api';
 import { trackBeginCheckout, trackPaymentFailed, trackPurchase } from '../lib/analytics';
+import AuthContext from "../context/AuthContext";
 
 interface BookingPageProps {
   product: AdminProduct;
@@ -32,7 +33,7 @@ const getAuthToken = () => {
 const loadRazorpayScript = () => {
   if (typeof window === 'undefined') return Promise.resolve(false);
   if ((window as any).Razorpay) return Promise.resolve(true);
-
+  
   const existingScript = document.querySelector('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
   if (existingScript) {
     return new Promise<boolean>((resolve) => {
@@ -40,7 +41,7 @@ const loadRazorpayScript = () => {
       existingScript.addEventListener('error', () => resolve(false), { once: true });
     });
   }
-
+  
   return new Promise<boolean>((resolve) => {
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -53,8 +54,17 @@ const loadRazorpayScript = () => {
 
 export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMethod = 'razorpay', selectedAddOns = [], onBack, onConfirm }) => {
   const navigate = useNavigate();
+  const auth = useContext(AuthContext);
+  
+  if (!auth) {
+    throw new Error("AuthContext not found");
+  }
+  
+  const { user } = auth;
+  console.log("Logged in user:", user);
   const [form, setForm] = useState<BookingDetails>({
     name: '',
+    email: '',
     mobile: '',
     location: '',
     eventDate: '',
@@ -66,16 +76,27 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [paymentDialog, setPaymentDialog] = useState<PaymentDialogState>(null);
-
+  
   const totalPrice = product.price + form.addOns.reduce((sum, addon) => sum + (addon.price || 0), 0);
   const bookingPayload = { ...form, addOns: form.addOns };
-
+  
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setPaymentMethod(preferredMethod);
     setForm(prev => ({ ...prev, addOns: selectedAddOns }));
   }, [product, preferredMethod, selectedAddOns]);
 
+  useEffect(() => {
+  if (user) {
+    setForm(prev => ({
+      ...prev,
+      name: prev.name || user.name || "",
+      email: user.email || "",
+      mobile: prev.mobile || user.phone || "",
+    }));
+  }
+}, [user]);
+  
   const createBookingOrder = async (paymentStatus: 'pending' | 'paid' | 'failed' | 'cancelled', paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string; }) => {
     const token = getAuthToken();
     const payload = {
@@ -87,6 +108,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       amount: totalPrice,
       paymentMethod,
       paymentStatus,
+      customer: {
+          name: user?.name,
+          email: user?.email,
+          phone: user?.phone,
+      },
       addons: form.addOns.filter((item) => item.kind !== 'activity'),
       activities: form.addOns.filter((item) => item.kind === 'activity'),
       bookingDetails: [{ ...form, addOns: form.addOns }],
@@ -94,7 +120,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       razorpayPaymentId: paymentMeta?.razorpayPaymentId,
       razorpaySignature: paymentMeta?.razorpaySignature,
     };
-
+    
     console.log('========== ORDER PAYLOAD ==========');
     console.log(JSON.stringify(payload, null, 2));
     console.log('Selected Addons:', form.addOns);
@@ -123,17 +149,17 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       console.error('[BookingPage] ORDER SAVE FAILED', { status: response.status, responseBody });
       throw new Error(responseBody?.error || 'Unable to save booking.');
     }
-
+    
     const savedOrderId = responseBody?._id || responseBody?.id || responseBody?.order?._id || null;
     console.log('[BookingPage] ORDER SAVE SUCCESS', { status: response.status, responseBody });
     console.log('[BookingPage] ORDER ID', savedOrderId);
     return responseBody;
   };
-
+  
   const updateField = (field: keyof BookingDetails, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
-
+  
   const validate = () => {
     if (!form.name || !form.eventDate || !form.eventTime || !form.mobile || !form.location) {
       return false;
@@ -163,7 +189,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       '',
       'Please confirm availability and payment details. Thank you!',
     ].filter(Boolean).join('\n');
-
+    
     const payload = { ...form, addOns: selectedAddOns };
     try {
       await createBookingOrder('pending');
@@ -173,30 +199,30 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
     onConfirm(product, payload, 'whatsapp');
     window.open(`https://wa.me/917022058460?text=${encodeURIComponent(message)}`, '_blank');
   };
-
+  
   const startPayment = async () => {
     if (!razorpayKey) {
       setError('Razorpay public key is missing. Please configure VITE_RAZORPAY_KEY_ID.');
       return;
     }
-
+    
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded || !(window as any).Razorpay) {
       setError('Razorpay checkout could not be loaded. Please refresh the page and try again.');
       return;
     }
-
+    
     trackBeginCheckout(product._id, product.name, product.price);
     setLoading(true);
     setError('');
     setPaymentDialog(null);
-
+    
     let paymentHandled = false;
     const savePaymentOutcome = async (status: 'paid' | 'failed' | 'cancelled', meta?: { razorpayOrderId?: string; razorpayPaymentId?: string; razorpaySignature?: string; }, dialog?: PaymentDialogState) => {
       if (paymentHandled) return null;
       paymentHandled = true;
       setLoading(false);
-
+      
       try {
         const createdOrder = await createBookingOrder(status, meta);
         if (dialog) {
@@ -247,10 +273,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   image: "https://www.thedecorparty.com/final_logo.jpeg",
 
   prefill: {
-    name: form.name,
-    email: "",
+    name: user?.name || form.name,
+    email: user?.email || "",
     contact: form.mobile,
-  },
+},
 
   notes: {
     productId: product._id,
@@ -289,10 +315,38 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                razorpay_order_id: paymentResponse.razorpay_order_id,
-                razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                razorpay_signature: paymentResponse.razorpay_signature,
-              }),
+              razorpay_order_id: paymentResponse.razorpay_order_id,
+              razorpay_payment_id: paymentResponse.razorpay_payment_id,
+              razorpay_signature: paymentResponse.razorpay_signature,
+
+              orderPayload: {
+                productId: product._id,
+                productName: product.name,
+                customer: {
+                    name: user?.name,
+                    email: user?.email,
+                    phone: user?.phone,
+                },
+                categoryName: product.categoryName,
+                subcategory: product.subcategory,
+                packagePrice: product.price,
+                amount: totalPrice,
+
+                paymentMethod: "razorpay",
+                paymentStatus: "paid",
+
+                addons: form.addOns.filter(a => a.kind !== "activity"),
+                activities: form.addOns.filter(a => a.kind === "activity"),
+
+                bookingDetails: [
+                {
+                  ...form,
+                  email: user?.email || "",
+                  addOns: form.addOns,
+                },
+              ],
+              },
+            }),
             });
 
             const verifyBody = await verifyResponse.json().catch(() => null);

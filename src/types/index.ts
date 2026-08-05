@@ -207,6 +207,7 @@ export interface BookingAddonSnapshot {
 
 export interface BookingDetails {
   name: string;
+  email: string; 
   mobile: string;
   location: string;
   eventDate: string;
