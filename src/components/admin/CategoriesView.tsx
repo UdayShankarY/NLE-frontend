@@ -59,7 +59,7 @@ export const CategoriesView = () => {
     setCats(newCats);
 
     try {
-      const orderedIds = newCats.map((c) => c._id);
+      const orderedIds = newCats.map((c) => String(c._id || (c as any).id || '')).filter(Boolean);
       const res = await fetch(`${API}/reorder`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -67,11 +67,14 @@ export const CategoriesView = () => {
       });
 
       if (!res.ok) {
-        throw new Error("Failed to reorder");
+        const payload = await res.json().catch(() => null);
+        console.error("Category reorder API failed:", res.status, payload);
+        throw new Error(payload?.error || "Failed to reorder");
       }
       trackAdminAction('reorder_categories', 'category');
       toast.success("Category position updated!");
-    } catch {
+    } catch (err: any) {
+      console.error("Category move error:", err);
       toast.error("Failed to update category order");
       fetchCategories();
     }
