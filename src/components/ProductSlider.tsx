@@ -272,7 +272,7 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
               ? 'flex gap-3 overflow-x-auto pb-4 pt-1.5 scroll-smooth no-scrollbar snap-x cursor-grab select-none sm:gap-4.5'
               : 'grid grid-cols-2 gap-3.5 min-[480px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 3xl:grid-cols-7 4xl:grid-cols-8 gap-4 sm:gap-6'
           )}
-          style={isLanding ? { touchAction: 'pan-x' } : undefined}
+          style={isLanding ? { touchAction: 'pan-x pan-y' } : undefined}
         >
           {apiProducts.map((product, i) => (
             <div

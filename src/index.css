@@ -17,11 +17,25 @@
     --color-ink: #F9FAFB;
     --color-ink-muted: #9CA3AF;
   }
+  html {
+    max-width: 100%;
+    overflow-x: hidden;
+    width: 100%;
+  }
   body {
     font-family: 'Poppins', sans-serif;
     background-color: #FFFFFF;
     color: #0F172A;
     transition: background-color 0.25s ease, color 0.25s ease;
+    max-width: 100%;
+    overflow-x: hidden;
+    width: 100%;
+    touch-action: manipulation;
+  }
+  #root {
+    max-width: 100%;
+    overflow-x: hidden;
+    width: 100%;
   }
   html.dark body {
     background-color: #0F172A;

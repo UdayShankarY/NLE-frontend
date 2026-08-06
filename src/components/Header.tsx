@@ -319,8 +319,8 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Drawer panel */}
           <div
             className={cn(
-              'fixed inset-y-0 right-0 z-[110] flex h-[100dvh] w-[85%] max-w-xs flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)] md:hidden overflow-hidden',
-              mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+              'fixed inset-y-0 right-0 z-[110] flex h-[100dvh] w-[85%] max-w-xs flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-all duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)] md:hidden overflow-hidden',
+              mobileMenuOpen ? 'translate-x-0 opacity-100 visible pointer-events-auto' : 'translate-x-full opacity-0 invisible pointer-events-none'
             )}
           >
             {/* Drawer header */}

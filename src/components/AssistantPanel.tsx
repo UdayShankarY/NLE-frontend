@@ -108,7 +108,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       {/* Backdrop */}
       <div
         className={cn(
-          'fixed inset-0 z-[10000] bg-black/40 backdrop-blur-sm transition-opacity duration-200',
+          'fixed inset-0 z-[1000000] bg-black/50 backdrop-blur-sm transition-opacity duration-200',
           open ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         onClick={onClose}
@@ -117,7 +117,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
       {/* Panel */}
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-[10001] flex w-[min(400px,95vw)] flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)]',
+          'fixed inset-y-0 right-0 z-[1000001] flex w-[min(420px,100vw)] flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)]',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
         role="dialog"
@@ -210,7 +210,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                     <div
                       ref={productTrackRef}
                       className="flex gap-3 overflow-x-auto pb-2 pl-1 pr-3 scroll-smooth no-scrollbar scroll-snap-x"
-                      style={{ touchAction: 'pan-x' }}
+                      style={{ touchAction: 'pan-x pan-y' }}
                       onMouseDown={onDragStart}
                       onMouseMove={onDragMove}
                       onMouseUp={onDragEnd}
@@ -271,7 +271,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
         </div>
 
         {/* Form input */}
-        <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+        <form onSubmit={onSubmit} className="relative z-30 flex items-center gap-2.5 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-xl">
           <input
             ref={inputRef}
             type="text"
@@ -279,14 +279,14 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
             onChange={e => onInputChange(e.target.value)}
             placeholder={t.ask_assistant || 'Ask about decorations...'}
             autoComplete="off"
-            className="flex-1 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-gray-800 dark:text-slate-100 outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-brand-purple/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-purple/15"
+            className="flex-1 rounded-2xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-3 text-xs sm:text-sm text-gray-900 dark:text-slate-100 outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-brand-purple focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-purple/20"
           />
           <button
             type="submit"
             aria-label="Send"
-            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-brand-purple text-white shadow-md transition-all duration-200 hover:bg-brand-purple-dark hover:shadow-lg active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-brand-purple text-white shadow-lg shadow-purple-600/30 transition-all duration-200 hover:bg-brand-purple-dark hover:shadow-xl active:scale-95 cursor-pointer"
           >
-            <Send size={16} />
+            <Send size={18} />
           </button>
         </form>
       </aside>

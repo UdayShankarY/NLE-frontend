@@ -191,7 +191,7 @@ export default function MainLayout({
           <AuthModal isOpen={authModalOpen} tab={authModalTab} onClose={onCloseAuth} onSetTab={onSetAuthTab} onLogin={onLogin || internalHandleLogin} />
         </div>
       )}
-      {!hideShell && <FloatingActionMenu onAssistantOpen={onAssistantOpen} />}
+      {!hideShell && <FloatingActionMenu onAssistantOpen={onAssistantOpen} assistantOpen={assistantOpen} />}
     </>
   );
 }

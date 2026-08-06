@@ -8,6 +8,7 @@ const WHATSAPP_URL = `https://wa.me/${SUPPORT_PHONE}`;
 
 interface FloatingActionMenuProps {
   onAssistantOpen: () => void;
+  assistantOpen?: boolean;
 }
 
 const actions = [
@@ -34,7 +35,7 @@ const actions = [
   },
 ] as const;
 
-export function FloatingActionMenu({ onAssistantOpen }: FloatingActionMenuProps) {
+export function FloatingActionMenu({ onAssistantOpen, assistantOpen = false }: FloatingActionMenuProps) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -62,15 +63,14 @@ export function FloatingActionMenu({ onAssistantOpen }: FloatingActionMenuProps)
     setOpen(false);
     if (action === 'assistant') onAssistantOpen();
     if (action === 'call') {
-      const isMobile = window.matchMedia('(max-width: 767px)').matches;
-      if (isMobile || window.confirm('Call TheDecorParty?')) window.location.href = `tel:${SUPPORT_PHONE}`;
+      window.location.href = `tel:${SUPPORT_PHONE}`;
     }
     if (action === 'whatsapp') window.open(WHATSAPP_URL, '_blank', 'noopener,noreferrer');
   };
 
   const isProductPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/product/');
 
-  if (!mounted || typeof document === 'undefined') return null;
+  if (!mounted || typeof document === 'undefined' || assistantOpen) return null;
 
   return ReactDOM.createPortal(
     <div

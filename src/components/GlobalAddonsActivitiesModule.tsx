@@ -204,7 +204,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-2 scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-2 scroll-smooth touch-pan-y [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((category) => {
           const isActive = category === activeCategory;
           return (
@@ -234,7 +234,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
 
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto overflow-y-hidden w-full max-w-full scroll-smooth pb-4 pl-1 pr-10 touch-pan-x snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="flex gap-4 overflow-x-auto overflow-y-hidden w-full max-w-full scroll-smooth pb-4 pl-1 pr-10 touch-pan-y snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {visibleItems.length > 0 ? visibleItems.map((item) => {
             const itemId = getItemId(item);

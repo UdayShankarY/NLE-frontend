@@ -245,7 +245,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             <div
               ref={swipeTrackRef}
               onScroll={handleScroll}
-              className="flex h-full w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-x"
+              className="flex h-full w-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] touch-pan-y"
             >
               {allImages.map((img, i) => (
                 <div
