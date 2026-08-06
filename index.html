@@ -4,23 +4,40 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/final_logo.jpeg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>__OG_TITLE__</title>
-    <meta name="description" content="__OG_DESCRIPTION__" />
-    <meta property="og:title" content="__OG_TITLE__" />
-    <meta property="og:description" content="__OG_DESCRIPTION__" />
-    <meta property="og:image" content="__OG_IMAGE__" />
-    <meta property="og:url" content="__OG_URL__" />
-    <meta property="og:type" content="product" />
+    <title>TheDecorParty — Premium Event &amp; Party Decor Booking Platform</title>
+    <meta name="description" content="Book premium party decorations, birthday setups, wedding decor, balloon styling, and event entertainment packages online with instant booking and live status tracking." />
+    <meta property="og:title" content="TheDecorParty — Premium Event &amp; Party Decor Booking Platform" />
+    <meta property="og:description" content="Book premium party decorations, birthday setups, wedding decor, balloon styling, and event entertainment packages online with instant booking and live status tracking." />
+    <meta property="og:image" content="/final_logo.jpeg" />
+    <meta property="og:url" content="https://thedecorparty.com" />
+    <meta property="og:type" content="website" />
     <meta property="og:site_name" content="TheDecorParty" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="__OG_TITLE__" />
-    <meta name="twitter:description" content="__OG_DESCRIPTION__" />
-    <meta name="twitter:image" content="__OG_IMAGE__" />
+    <meta name="twitter:title" content="TheDecorParty — Premium Event &amp; Party Decor Booking Platform" />
+    <meta name="twitter:description" content="Book premium party decorations, birthday setups, wedding decor, balloon styling, and event entertainment packages online with instant booking and live status tracking." />
+    <meta name="twitter:image" content="/final_logo.jpeg" />
     <link rel="canonical" href="__OG_URL__" />
+
+    <!-- Google Fonts Preconnect & Stylesheet -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('theme');
+          if (saved === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
   </body>
 </html>

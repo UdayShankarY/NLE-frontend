@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import type { CatalogActivity, CatalogAddon, CatalogSelectionItem } from '../types';
 import { getApiUrl } from '../lib/api';
 
@@ -180,34 +180,28 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
 
   if (loading) {
     return (
-      <div className="rounded-card border border-border bg-white p-4 text-sm text-ink-muted">
+      <div className="rounded-card border border-border bg-white dark:bg-slate-800 p-4 text-sm text-ink-muted">
         Loading add-ons and activities...
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 rounded-card border border-border bg-gray-50 p-4 sm:p-6">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-brand-purple" />
-            <h2 className="text-lg font-bold text-ink">Add-ons &amp; Activities</h2>
-          </div>
-          <div className="flex shrink-0 rounded-full border border-border bg-white p-1 shadow-sm">
-            {TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => setActiveTab(tab.key)}
-                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${activeTab === tab.key ? 'bg-brand-purple text-white shadow-sm' : 'text-ink hover:bg-gray-100'}`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+    <div className="space-y-4 rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/70 dark:bg-slate-900/60 p-4 sm:p-5">
+      {/* Left-aligned Segmented Tab Toggle Header */}
+      <div className="flex items-center justify-start">
+        <div className="inline-flex shrink-0 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-1 shadow-xs">
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => setActiveTab(tab.key)}
+              className={`rounded-full px-4 py-1.5 text-xs sm:text-sm font-bold transition-all cursor-pointer ${activeTab === tab.key ? 'bg-brand-purple text-white shadow-xs' : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-        <p className="text-sm text-ink-muted">Filter by category, then swipe or click through the available cards.</p>
       </div>
 
       <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-2 scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -218,7 +212,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
               key={category}
               type="button"
               onClick={() => setActiveCategory(category)}
-              className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${isActive ? 'border-brand-purple bg-brand-purple/10 text-brand-purple' : 'border-border bg-white text-ink hover:border-brand-purple hover:text-brand-purple'}`}
+              className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition ${isActive ? 'border-brand-purple bg-brand-purple/10 text-brand-purple dark:text-purple-300' : 'border-border bg-white dark:bg-slate-800 text-ink hover:border-brand-purple hover:text-brand-purple'}`}
             >
               {category}
             </button>
@@ -231,7 +225,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
           <button
             type="button"
             onClick={() => scrollItems('left')}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-ink shadow-sm transition hover:bg-gray-100"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white dark:bg-slate-800 text-ink shadow-sm transition hover:bg-gray-100 dark:hover:bg-slate-700"
             aria-label="Scroll left"
           >
             <ChevronLeft size={18} />
@@ -250,33 +244,40 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
             return (
               <div
                 key={itemId}
-                className="flex-none shrink-0 w-[75vw] min-w-[240px] max-w-[320px] sm:w-[240px] sm:min-w-[240px] sm:max-w-[280px] md:w-[280px] md:min-w-[280px] md:max-w-[300px] lg:w-[300px] xl:w-[320px] snap-start"
+                className="flex-none shrink-0 w-[220px] sm:w-[240px] md:w-[250px] snap-start"
               >
-                <div className="group flex h-full min-h-[430px] sm:min-h-[460px] flex-col overflow-hidden rounded-[28px] border border-border bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-                  <div className="w-full overflow-hidden bg-gray-100">
-                    <div className="h-[160px] w-full overflow-hidden rounded-t-[28px] bg-gray-100 object-cover sm:h-[170px] md:h-[180px]">
-                      <img
-                        src={item.image || 'https://via.placeholder.com/560x560?text=No+image'}
-                        alt={getItemTitle(item)}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
+                <div className="group flex h-[260px] sm:h-[275px] flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-800/90 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                  {/* Image (55-60% height) */}
+                  <div className="h-[140px] sm:h-[150px] w-full overflow-hidden bg-gray-100 dark:bg-slate-900 relative">
+                    <img
+                      src={item.image || 'https://via.placeholder.com/560x560?text=No+image'}
+                      alt={getItemTitle(item)}
+                      loading="lazy"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                   </div>
-                  <div className="flex flex-1 flex-col gap-1.5 p-4 sm:gap-2">
+                  {/* Content (compact, zero empty gaps) */}
+                  <div className="flex flex-1 flex-col justify-between p-3">
                     <div>
-                      <div className="line-clamp-2 text-base font-semibold text-ink">{getItemTitle(item)}</div>
-                      <div className="mt-1.5 sm:mt-2 min-h-[2.25rem] overflow-hidden text-sm leading-5 text-ink-muted line-clamp-2">{getItemDescription(item)}</div>
+                      <h4 className="line-clamp-1 text-xs sm:text-sm font-bold text-gray-900 dark:text-slate-100 group-hover:text-brand-purple dark:group-hover:text-purple-300 transition-colors">
+                        {getItemTitle(item)}
+                      </h4>
+                      <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-gray-500 dark:text-slate-400">
+                        {getItemDescription(item)}
+                      </p>
                     </div>
-                    <div className="mt-auto flex items-end justify-between gap-3">
+                    
+                    <div className="mt-2 flex items-center justify-between border-t border-gray-100 dark:border-slate-700/60 pt-2">
                       <div>
-                        <div className="text-sm font-medium text-ink-muted">Price</div>
-                        <div className="text-lg font-bold text-brand-purple">{getItemPriceLabel(item)}</div>
+                        <div className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Price</div>
+                        <div className="text-xs sm:text-sm font-extrabold text-brand-purple dark:text-purple-300">
+                          {getItemPriceLabel(item)}
+                        </div>
                       </div>
                       <button
                         type="button"
                         onClick={() => activeTab === 'addons' ? toggleAddon(itemId) : toggleActivity(itemId)}
-                        className={`h-11 min-h-[44px] rounded-full px-4 text-sm font-semibold transition ${selected ? 'bg-brand-purple text-white' : 'border border-border bg-white text-ink hover:bg-gray-100'}`}
+                        className={`h-8 rounded-full px-4 text-xs font-bold transition-all active:scale-95 shadow-xs ${selected ? 'bg-brand-purple text-white' : 'border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:border-brand-purple hover:text-brand-purple'}`}
                       >
                         {selected ? 'Remove' : 'Add'}
                       </button>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import type { AdminProduct } from '../types';
 import { ProductCard } from './ProductSlider';
 import { useLanguage } from '../hooks/useLanguage';
-import { Bot, X, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Bot, X, Send, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export type AssistantProduct = {
@@ -46,6 +46,7 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const productTrackRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollProducts = (direction: 'left' | 'right') => {
     const track = productTrackRef.current;
@@ -83,90 +84,105 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
   // Auto-scroll to latest message when messages change
   React.useEffect(() => {
     const el = document.getElementById('assistant-scroll-container');
-    if (el) {
-      el.scrollTop = el.scrollHeight;
-    }
-
-    if (open && inputRef?.current) {
-      inputRef.current.focus();
-    }
+    if (el) el.scrollTop = el.scrollHeight;
+    if (open && inputRef?.current) inputRef.current.focus();
   }, [messages, open, inputRef]);
+
+  // Lock body scroll when panel is open — prevents page scroll-through
+  React.useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    } else {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+      document.body.style.touchAction = '';
+    };
+  }, [open]);
 
   return (
     <>
-    <div
-      className={cn(
-        'fixed inset-0 z-[10000] bg-slate-900/35 transition-opacity duration-200',
-        open ? 'opacity-100' : 'pointer-events-none opacity-0'
-      )}
-      onClick={onClose}
-    />
+      {/* Backdrop */}
+      <div
+        className={cn(
+          'fixed inset-0 z-[10000] bg-black/40 backdrop-blur-sm transition-opacity duration-200',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+        onClick={onClose}
+      />
 
-    <aside
-      className={cn(
-        'fixed inset-y-0 right-0 z-[10001] flex w-[min(380px,92vw)] flex-col bg-white shadow-2xl transition-transform duration-300',
-        open ? 'translate-x-0' : 'translate-x-full'
-      )}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t.ai_assistant || 'AI Assistant'}
-    >
-      <div className="flex items-start justify-between gap-3 border-b border-gray-100 px-5 pb-4 pt-5">
-        <div>
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-purple">
-            {t.ai_assistant || 'AI Assistant'}
-          </p>
-          <h3 className="text-base font-semibold text-gray-900">
-            {t.ask_assistant || 'How can we help?'}
-          </h3>
+      {/* Panel */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 right-0 z-[10001] flex w-[min(400px,95vw)] flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)]',
+          open ? 'translate-x-0' : 'translate-x-full'
+        )}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t.ai_assistant || 'AI Assistant'}
+        // Prevent touch events from bubbling to backdrop/page
+        onTouchMove={e => e.stopPropagation()}
+        onWheel={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-brand-purple to-brand-purple-light px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+              <Bot size={20} className="text-white" />
+              <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-brand-purple bg-emerald-400" />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-white/70">
+                {t.ai_assistant || 'AI Assistant'}
+              </p>
+              <h3 className="text-sm font-semibold text-white">
+                {t.ask_assistant || 'How can we help?'}
+              </h3>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+            onClick={onClose}
+            aria-label="Close assistant"
+          >
+            <X size={18} />
+          </button>
         </div>
 
-        <button
-          type="button"
-          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-brand-purple/10 text-brand-purple hover:bg-brand-purple/20"
-          onClick={onClose}
-          aria-label="Close assistant"
+        {/* Messages */}
+        <div
+          className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4"
+          id="assistant-scroll-container"
+          style={{
+            overscrollBehavior: 'contain',
+            WebkitOverflowScrolling: 'touch',
+            touchAction: 'pan-y',
+          }}
         >
-          <X size={18} />
-        </button>
-      </div>
-
-      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-        <div className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1" id="assistant-scroll-container">
-
-          {messages.map((message) => (
-            <div key={message.id}>
-
+          {messages.map(message => (
+            <div key={message.id} className={cn('flex flex-col gap-2', message.sender === 'user' && 'items-end')}>
+              {/* Bubble */}
               <div
                 className={cn(
-                  'max-w-[85%] rounded-2xl px-3 py-2.5 text-sm leading-snug break-words transition-opacity duration-300',
+                  'max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed break-words',
                   message.sender === 'bot'
-                    ? 'self-start bg-brand-purple/10 text-brand-purple-dark'
-                    : 'ml-auto bg-gradient-to-br from-brand-purple to-brand-pink text-white'
+                    ? 'rounded-tl-sm bg-gray-100 dark:bg-slate-800 text-gray-800 dark:text-slate-100'
+                    : 'rounded-tr-sm bg-gradient-to-br from-brand-purple to-brand-purple-light text-white'
                 )}
               >
                 {message.loading ? (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span>🤖</span>
-                      <span className="text-sm">Thinking</span>
-                      <span className="dots inline-block w-8" aria-hidden>.
-                        <style>{`.dots{display:inline-block}.dots::after{content:'...';animation:dot 1s steps(3,end) infinite}@keyframes dot{0%{content:''}33%{content:'.'}66%{content:'..'}100%{content:'...'}}`}</style>
-                      </span>
-                    </div>
-                    <div className="rounded-[24px] bg-slate-50 p-3 shadow-sm">
-                      <div className="flex gap-4 overflow-x-auto pb-2 pl-1 pr-3 scroll-smooth touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {[1, 2, 3].map((item) => (
-                          <div key={item} className="min-w-[240px] snap-start rounded-[26px] border border-border bg-white p-3.5 shadow-card animate-pulse">
-                            <div className="mb-3 h-[128px] w-full rounded-3xl bg-slate-200" />
-                            <div className="space-y-2">
-                              <div className="h-4 w-3/4 rounded-full bg-slate-200" />
-                              <div className="h-3 w-1/2 rounded-full bg-slate-200" />
-                              <div className="h-10 w-full rounded-2xl bg-slate-200" />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <Sparkles size={14} className="text-brand-purple dark:text-purple-300 animate-pulse" />
+                    <span className="text-gray-500 dark:text-slate-400">Thinking</span>
+                    <div className="flex items-center gap-1">
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
+                      <span className="typing-dot" />
                     </div>
                   </div>
                 ) : (
@@ -174,31 +190,33 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                 )}
               </div>
 
+              {/* Product cards for bot messages */}
               {message.products && message.products.length > 0 && (
-                <div className="mt-3 rounded-[28px] bg-slate-50 p-3 shadow-sm">
-                  <div className="mb-3 text-sm font-semibold text-ink">✨ Recommended for You</div>
+                <div className="w-full rounded-2xl bg-gray-50 dark:bg-slate-800/80 p-3 shadow-sm border border-gray-100 dark:border-slate-700/60">
+                  <div className="mb-2.5 flex items-center gap-1.5 text-xs font-semibold text-gray-700 dark:text-slate-200">
+                    <Sparkles size={12} className="text-brand-purple dark:text-purple-300" />
+                    Recommended for You
+                  </div>
 
                   <div className="relative">
                     <button
                       type="button"
                       onClick={() => scrollProducts('left')}
-                      className="absolute left-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
+                      className="absolute left-0 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 sm:flex"
                       aria-label="Scroll left"
                     >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={16} />
                     </button>
                     <div
                       ref={productTrackRef}
-                      className="flex gap-4 overflow-x-auto pb-2 pl-1 pr-3 scroll-smooth touch-pan-x snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      className="flex gap-3 overflow-x-auto pb-2 pl-1 pr-3 scroll-smooth no-scrollbar scroll-snap-x"
+                      style={{ touchAction: 'pan-x' }}
                       onMouseDown={onDragStart}
                       onMouseMove={onDragMove}
                       onMouseUp={onDragEnd}
                       onMouseLeave={onDragEnd}
-                      onTouchStart={onDragStart}
-                      onTouchMove={onDragMove}
-                      onTouchEnd={onDragEnd}
                     >
-                      {message.products.map((p) => {
+                      {message.products.map(p => {
                         const product: AdminProduct = {
                           _id: p.id,
                           name: p.name,
@@ -222,15 +240,16 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                           updatedAt: new Date().toISOString(),
                         };
 
-                        const onViewDetails = (prod: AdminProduct) => navigate(`/product/${prod._id}`);
-
                         return (
-                          <div key={p.id} className="min-w-[240px] snap-start sm:min-w-[260px]">
-<ProductCard
-    product={product}
-    onViewDetails={onViewDetails}
-    isAI
-/>
+                          <div key={p.id} className="w-[180px] flex-shrink-0 snap-start">
+                            <ProductCard
+                              product={product}
+                              onViewDetails={() => {
+                                navigate(`/product/${product._id}`);
+                                onClose();
+                              }}
+                              isAI
+                            />
                           </div>
                         );
                       })}
@@ -238,45 +257,40 @@ export const AssistantPanel: React.FC<AssistantPanelProps> = ({
                     <button
                       type="button"
                       onClick={() => scrollProducts('right')}
-                      className="absolute right-0 top-1/2 z-10 hidden h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-white shadow hover:bg-gray-50 sm:flex"
+                      className="absolute right-0 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 sm:flex"
                       aria-label="Scroll right"
                     >
-                      <ChevronRight size={18} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
               )}
-
             </div>
           ))}
-
+          <div ref={messagesEndRef} />
         </div>
 
-        <form
-          className="flex gap-2 border-t border-gray-100 pt-3"
-          onSubmit={onSubmit}
-        >
+        {/* Form input */}
+        <form onSubmit={onSubmit} className="flex items-center gap-2 border-t border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
           <input
             ref={inputRef}
             type="text"
             value={inputValue}
-            onChange={(e) => onInputChange(e.target.value)}
-            placeholder={t.ask_assistant || 'Ask me about decorations...'}
+            onChange={e => onInputChange(e.target.value)}
+            placeholder={t.ask_assistant || 'Ask about decorations...'}
             autoComplete="off"
-            className="flex-1 rounded-full border border-border px-3.5 py-2.5 text-sm outline-none focus:border-brand-purple-light focus:ring-2 focus:ring-brand-purple-light/25"
+            className="flex-1 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 px-4 py-2.5 text-sm text-gray-800 dark:text-slate-100 outline-none transition-all duration-200 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:border-brand-purple/50 focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-purple/15"
           />
-
           <button
             type="submit"
             aria-label="Send"
-            className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-purple to-brand-pink text-white"
+            className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-brand-purple text-white shadow-md transition-all duration-200 hover:bg-brand-purple-dark hover:shadow-lg active:scale-95"
           >
             <Send size={16} />
           </button>
         </form>
-      </div>
-    </aside>
-  </>
+      </aside>
+    </>
   );
 };
 
@@ -290,13 +304,13 @@ export const AssistantTrigger: React.FC<{
     aria-label="AI Assistant"
     onClick={onOpen}
     className={cn(
-      'inline-flex items-center gap-1.5 rounded-full bg-gradient-to-br from-brand-purple to-brand-pink px-3 py-2 text-sm font-bold text-white shadow-[0_8px_18px_rgba(124,58,237,0.22)]',
+      'inline-flex items-center gap-1.5 rounded-full font-bold text-white transition-all duration-200',
       mobile
-        ? 'mb-2 w-full justify-start rounded-lg bg-brand-purple/10 px-3.5 py-3 text-brand-purple-dark shadow-none'
-        : 'hidden md:inline-flex'
+        ? 'mb-2 w-full justify-start rounded-xl bg-brand-purple/10 px-4 py-3 text-sm text-brand-purple shadow-none hover:bg-brand-purple/20'
+        : 'hidden bg-gradient-to-r from-brand-purple to-brand-purple-light px-4 py-2 text-sm shadow-[0_4px_16px_rgba(107,33,168,0.3)] hover:shadow-[0_6px_20px_rgba(107,33,168,0.4)] hover:scale-105 md:inline-flex'
     )}
   >
-    <Bot size={18} strokeWidth={2.1} />
-    <span>Help</span>
+    <Bot size={mobile ? 18 : 16} strokeWidth={2.1} />
+    <span>{mobile ? 'AI Assistant' : 'Help'}</span>
   </button>
 );

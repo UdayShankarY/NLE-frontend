@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { AIProvider } from './context/AIContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 import './index.css';
 import AppRoutes from './routes/AppRoutes';
@@ -37,12 +38,14 @@ mo.observe(document.body, {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <AIProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
-      </AIProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AIProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </AIProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );

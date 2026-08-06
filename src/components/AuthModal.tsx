@@ -1,12 +1,13 @@
 import { auth } from "../firebase";
 import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Mail, Lock, User, Phone, Eye, EyeOff, Gift, Zap, PartyPopper, Mailbox } from 'lucide-react';
+import { X, Mail, Lock, User, Phone, Eye, EyeOff, Sparkles, LogIn, UserPlus } from 'lucide-react';
 import type { AuthTab, AuthUser } from '../types';
 import { cn } from '../lib/utils';
 import { getApiUrl } from '../lib/api';
 import { trackLogin, trackSignup } from '../lib/analytics';
+
 function getGoogleAuthErrorMessage(error: unknown): string {
   const code = typeof error === 'object' && error !== null && 'code' in error
     ? String((error as { code?: string }).code)
@@ -52,7 +53,7 @@ interface AuthModalProps {
 }
 
 const GoogleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24">
+  <svg width="18" height="18" viewBox="0 0 24 24" className="flex-shrink-0">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
@@ -63,82 +64,137 @@ const GoogleIcon = () => (
 function validateEmail(v: string) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 function validatePhone(v: string) { return /^[6-9]\d{9}$/.test(v); }
 
-function getStrength(val: string): { score: number; label: string; color: string; width: string } {
+function getStrength(val: string): { score: number; label: string; color: string; bg: string; width: string } {
   let score = 0;
   if (val.length >= 8) score++;
   if (/[A-Z]/.test(val)) score++;
   if (/[0-9]/.test(val)) score++;
   if (/[^A-Za-z0-9]/.test(val)) score++;
   const map = [
-    { label: '', color: '#E5E7EB', width: '0%' },
-    { label: 'Weak', color: '#ef4444', width: '25%' },
-    { label: 'Fair', color: '#f59e0b', width: '50%' },
-    { label: 'Good', color: '#10b981', width: '75%' },
-    { label: 'Strong 💪', color: '#6B21A8', width: '100%' },
+    { label: '', color: '#E5E7EB', bg: 'bg-gray-200', width: '0%' },
+    { label: 'Weak', color: '#ef4444', bg: 'bg-red-500', width: '25%' },
+    { label: 'Fair', color: '#f59e0b', bg: 'bg-amber-500', width: '50%' },
+    { label: 'Good', color: '#10b981', bg: 'bg-emerald-500', width: '75%' },
+    { label: 'Strong', color: '#6B21A8', bg: 'bg-brand-purple', width: '100%' },
   ];
   return { score, ...map[score] };
 }
 
-// ── Shared building blocks ─────────────────────────
-interface FieldProps {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}
-const Field: React.FC<FieldProps> = ({ label, error, children }) => (
-  <div className="flex flex-col gap-1.5">
-    <label className="text-sm font-medium text-ink">{label}</label>
-    {children}
-    {error && <span className="text-xs text-red-600">{error}</span>}
-  </div>
-);
-
-const fieldWrapClass =
-  'flex items-center gap-2 rounded-lg border border-border bg-white px-3 focus-within:border-brand-purple-light focus-within:ring-2 focus-within:ring-brand-purple-light';
-const fieldInputClass = 'w-full bg-transparent py-2.5 text-sm text-ink outline-none placeholder:text-ink-muted';
-
-interface PasswordInputProps {
+// ── Input Field Component ─────────────────────────────────────────
+interface InputFieldProps {
   id: string;
-  placeholder: string;
+  label: string;
+  type?: string;
   value: string;
   onChange: (v: string) => void;
+  icon?: React.ReactNode;
+  error?: string;
   autoComplete?: string;
+  prefix?: string;
+  endAdornment?: React.ReactNode;
+  maxLength?: number;
 }
-const PasswordInput: React.FC<PasswordInputProps> = ({ id, placeholder, value, onChange, autoComplete }) => {
+
+const InputField: React.FC<InputFieldProps> = ({
+  id,
+  label,
+  type = 'text',
+  value,
+  onChange,
+  icon,
+  error,
+  autoComplete,
+  prefix,
+  endAdornment,
+  maxLength,
+}) => {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-xs font-semibold text-gray-700 dark:text-slate-200">
+        {label}
+      </label>
+      <div
+        className={cn(
+          'flex h-11 items-center gap-2.5 rounded-xl border bg-white dark:bg-slate-800 px-3.5 transition-all duration-200',
+          error
+            ? 'border-red-300 dark:border-red-500/50 ring-2 ring-red-50 dark:ring-red-950/30'
+            : 'border-gray-200 dark:border-slate-700 focus-within:border-brand-purple/60 dark:focus-within:border-purple-400 focus-within:ring-2 focus-within:ring-brand-purple/10 hover:border-gray-300 dark:hover:border-slate-600'
+        )}
+      >
+        {icon && <span className="flex-shrink-0 text-gray-400 dark:text-slate-400">{icon}</span>}
+        {prefix && <span className="flex-shrink-0 text-sm font-medium text-gray-500 dark:text-slate-400">{prefix}</span>}
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          autoComplete={autoComplete}
+          maxLength={maxLength}
+          placeholder={`Enter your ${label.toLowerCase()}`}
+          className="w-full bg-transparent text-sm text-gray-900 dark:text-slate-100 outline-none placeholder:text-gray-400 dark:placeholder:text-slate-500"
+        />
+        {endAdornment}
+      </div>
+      {error && <span className="text-[11px] font-medium text-red-500 animate-fadeInUp">{error}</span>}
+    </div>
+  );
+};
+
+const PasswordInput: React.FC<{
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  error?: string;
+  autoComplete?: string;
+}> = ({ id, label, value, onChange, error, autoComplete }) => {
   const [show, setShow] = useState(false);
   return (
-    <div className={fieldWrapClass}>
-      <Lock size={16} className="flex-shrink-0 text-ink-muted" />
-      <input
-        id={id}
-        type={show ? 'text' : 'password'}
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        autoComplete={autoComplete}
-        className={fieldInputClass}
-      />
-      <button type="button" className="flex-shrink-0 text-ink-muted hover:text-ink" onClick={() => setShow(s => !s)}>
-        {show ? <EyeOff size={16} /> : <Eye size={16} />}
-      </button>
-    </div>
+    <InputField
+      id={id}
+      label={label}
+      type={show ? 'text' : 'password'}
+      value={value}
+      onChange={onChange}
+      icon={<Lock size={16} />}
+      error={error}
+      autoComplete={autoComplete}
+      endAdornment={
+        <button
+          type="button"
+          tabIndex={-1}
+          className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+          onClick={() => setShow(s => !s)}
+          aria-label={show ? 'Hide password' : 'Show password'}
+        >
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      }
+    />
   );
 };
 
 const SocialGoogleButton: React.FC<{ onClick: () => void; loading: boolean; label: string }> = ({ onClick, loading, label }) => (
   <button
     type="button"
-    className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-border bg-white py-2.5 text-sm font-medium text-ink transition-colors hover:bg-gray-50 disabled:opacity-60"
+    className="flex h-[46px] w-full items-center justify-center gap-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-sm font-semibold text-gray-700 dark:text-slate-200 transition-all duration-200 hover:bg-gray-50/90 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 active:scale-[0.99] disabled:opacity-60 shadow-xs"
     onClick={onClick}
     disabled={loading}
   >
-    <GoogleIcon /> {loading ? 'Opening Google...' : label}
+    {loading ? (
+      <span className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-gray-700 dark:border-t-slate-200" />
+    ) : (
+      <GoogleIcon />
+    )}
+    <span>{loading ? 'Connecting...' : label}</span>
   </button>
 );
 
 const AuthDivider: React.FC<{ label: string }> = ({ label }) => (
-  <div className="relative my-1 flex items-center gap-3 text-xs text-ink-muted">
-    <div className="h-px flex-1 bg-border" /> {label} <div className="h-px flex-1 bg-border" />
+  <div className="relative my-3 flex items-center gap-3 text-xs text-gray-400 dark:text-slate-500">
+    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+    <span className="font-medium">{label}</span>
+    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
   </div>
 );
 
@@ -146,10 +202,19 @@ const SubmitButton: React.FC<{ loading: boolean; loadingLabel: string; children:
   <button
     type="submit"
     disabled={loading}
-    className="flex items-center justify-center gap-2 rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white transition-colors hover:bg-brand-purple-dark disabled:opacity-70"
+    className="group relative flex h-[47px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-purple via-purple-700 to-brand-purple-dark px-5 text-sm sm:text-base font-bold text-white shadow-md shadow-brand-purple/20 transition-all duration-200 hover:shadow-lg hover:shadow-brand-purple/30 hover:scale-[1.005] active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100 disabled:shadow-none"
   >
-    {loading && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
-    <span>{loading ? loadingLabel : children}</span>
+    {loading ? (
+      <>
+        <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        <span>{loadingLabel}</span>
+      </>
+    ) : (
+      <>
+        <span>{children}</span>
+        <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
+      </>
+    )}
   </button>
 );
 
@@ -159,7 +224,6 @@ const LoginForm: React.FC<{
   onRegister: () => void;
   onForgot: () => void;
 }> = ({ onSuccess, onRegister, onForgot }) => {
-
   const [email, setEmail] = useState('');
   const [pass, setPass] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -214,7 +278,7 @@ const LoginForm: React.FC<{
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs: Record<string, string> = {};
-    if (!validateEmail(email)) errs.email = 'Please enter a valid email';
+    if (!validateEmail(email)) errs.email = 'Please enter a valid email address';
     if (pass.length < 6) errs.pass = 'Password must be at least 6 characters';
     setErrors(errs);
     if (Object.keys(errs).length > 0) return;
@@ -242,46 +306,70 @@ const LoginForm: React.FC<{
         role: data.user.role,
       }, data.token);
     } catch (err) {
-      setErrors({ email: 'Connection failed' });
+      setErrors({ email: 'Connection failed. Please check network.' });
       setLoading(false);
     }
   };
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+    <form className="flex flex-col gap-4 animate-fadeIn" onSubmit={submit} noValidate>
       <div>
-        <h2 className="text-xl font-bold text-ink">Welcome back! 👋</h2>
-        <p className="mt-1 text-sm text-ink-muted">Login to manage your celebrations</p>
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-purple-50 px-2.5 py-0.5 text-[11px] font-bold text-brand-purple">
+          <LogIn size={11} /> RETURNING USER
+        </div>
+        <h2 className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">Log in to your account</h2>
+        <p className="mt-1 text-xs text-gray-500 sm:text-sm">Welcome back! Please enter your details.</p>
       </div>
 
       <SocialGoogleButton onClick={handleGoogle} loading={googleLoading} label="Continue with Google" />
 
-      <AuthDivider label="or login with email" />
+      <AuthDivider label="or sign in with email" />
 
-      <Field label="Email Address" error={errors.email}>
-        <div className={fieldWrapClass}>
-          <Mail size={16} className="flex-shrink-0 text-ink-muted" />
-          <input type="email" placeholder="you@email.com" value={email}
-            onChange={e => setEmail(e.target.value)} autoComplete="email" className={fieldInputClass} />
-        </div>
-      </Field>
+      <InputField
+        id="loginEmail"
+        label="Email Address"
+        type="email"
+        value={email}
+        onChange={setEmail}
+        icon={<Mail size={16} />}
+        error={errors.email}
+        autoComplete="email"
+      />
 
-      <Field label="Password" error={errors.pass}>
-        <PasswordInput id="loginPass" placeholder="Enter your password"
-          value={pass} onChange={setPass} autoComplete="current-password" />
-      </Field>
+      <PasswordInput
+        id="loginPass"
+        label="Password"
+        value={pass}
+        onChange={setPass}
+        error={errors.pass}
+        autoComplete="current-password"
+      />
 
-      <div className="flex items-center justify-between text-sm">
-        <label className="flex items-center gap-2 text-ink-muted">
-          <input type="checkbox" defaultChecked className="accent-brand-purple" /> Remember me
+      <div className="flex items-center justify-between text-xs">
+        <label className="flex cursor-pointer items-center gap-2 text-gray-600 select-none">
+          <input type="checkbox" defaultChecked className="h-3.5 w-3.5 rounded border-gray-300 accent-brand-purple" />
+          <span>Remember me</span>
         </label>
-        <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => { e.preventDefault(); onForgot(); }}>Forgot password?</a>
+        <button
+          type="button"
+          className="font-semibold text-brand-purple hover:underline"
+          onClick={onForgot}
+        >
+          Forgot password?
+        </button>
       </div>
 
-      <SubmitButton loading={loading} loadingLabel="Logging in...">Login to Account</SubmitButton>
+      <SubmitButton loading={loading} loadingLabel="Signing in...">Log in</SubmitButton>
 
-      <p className="text-center text-sm text-ink-muted">
-        Don't have an account? <a href="#" className="font-semibold text-brand-purple hover:underline" onClick={e => { e.preventDefault(); onRegister(); }}>Register free</a>
+      <p className="mt-1 text-center text-xs text-gray-500">
+        Don't have an account?{' '}
+        <button
+          type="button"
+          className="font-bold text-brand-purple hover:underline"
+          onClick={onRegister}
+        >
+          Create account
+        </button>
       </p>
     </form>
   );
@@ -355,10 +443,10 @@ const RegisterForm: React.FC<{
     e.preventDefault();
     setSubmitError('');
     const errs: Record<string, string> = {};
-    if (!first) errs.first = 'Enter your first name';
-    if (!last) errs.last = 'Enter your last name';
+    if (!first) errs.first = 'Enter first name';
+    if (!last) errs.last = 'Enter last name';
     if (!validateEmail(email)) errs.email = 'Enter a valid email address';
-    if (!validatePhone(phone)) errs.phone = 'Enter a valid 10-digit Indian mobile number';
+    if (!validatePhone(phone)) errs.phone = 'Enter a valid 10-digit mobile number';
     if (pass.length < 8) errs.pass = 'Password must be at least 8 characters';
     if (pass !== confirm) errs.confirm = 'Passwords do not match';
     if (!terms) errs.terms = 'You must agree to the Terms & Privacy Policy';
@@ -397,7 +485,6 @@ const RegisterForm: React.FC<{
           role: loginData.user.role,
         }, loginData.token);
       } else {
-        // Registration succeeded but login failed, redirect to login
         setSubmitError('Registration successful, but auto login failed. Please login manually.');
         setLoading(false);
         onLogin();
@@ -409,197 +496,137 @@ const RegisterForm: React.FC<{
   };
 
   return (
-    <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
+    <form className="flex flex-col gap-3.5 animate-fadeIn" onSubmit={submit} noValidate>
       <div>
-        <h2 className="text-xl font-bold text-ink">Create Account 🎉</h2>
-        <p className="mt-1 text-sm text-ink-muted">Join thousands of happy customers</p>
+        <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-700">
+          <UserPlus size={11} /> GETTING STARTED
+        </div>
+        <h2 className="text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">Create your account</h2>
+        <p className="mt-1 text-xs text-gray-500 sm:text-sm">Start planning unforgettable celebrations across Bengaluru.</p>
       </div>
 
       <SocialGoogleButton onClick={handleGoogle} loading={googleLoading} label="Sign up with Google" />
 
       <AuthDivider label="or register with email" />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="First Name" error={errors.first}>
-          <div className={fieldWrapClass}>
-            <User size={16} className="flex-shrink-0 text-ink-muted" />
-            <input type="text" placeholder="First name" value={first}
-              onChange={e => setFirst(e.target.value)} autoComplete="given-name" className={fieldInputClass} />
-          </div>
-        </Field>
-        <Field label="Last Name" error={errors.last}>
-          <div className={fieldWrapClass}>
-            <input type="text" placeholder="Last name" value={last}
-              onChange={e => setLast(e.target.value)} autoComplete="family-name" className={fieldInputClass} />
-          </div>
-        </Field>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <InputField
+          id="regFirst"
+          label="First Name"
+          value={first}
+          onChange={setFirst}
+          icon={<User size={16} />}
+          error={errors.first}
+          autoComplete="given-name"
+        />
+        <InputField
+          id="regLast"
+          label="Last Name"
+          value={last}
+          onChange={setLast}
+          error={errors.last}
+          autoComplete="family-name"
+        />
       </div>
 
-      <Field label="Email Address" error={errors.email}>
-        <div className={fieldWrapClass}>
-          <Mail size={16} className="flex-shrink-0 text-ink-muted" />
-          <input type="email" placeholder="you@email.com" value={email}
-            onChange={e => setEmail(e.target.value)} autoComplete="email" className={fieldInputClass} />
-        </div>
-      </Field>
+      <InputField
+        id="regEmail"
+        label="Email Address"
+        type="email"
+        value={email}
+        onChange={setEmail}
+        icon={<Mail size={16} />}
+        error={errors.email}
+        autoComplete="email"
+      />
 
-      <Field label="Phone Number" error={errors.phone}>
-        <div className={fieldWrapClass}>
-          <Phone size={16} className="flex-shrink-0 text-ink-muted" />
-          <span className="flex-shrink-0 text-sm text-ink-muted">+91</span>
-          <input type="tel" placeholder="Please enter your number" value={phone}
-            onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-            autoComplete="tel" className={fieldInputClass} />
-        </div>
-      </Field>
-
-      <Field label="Password" error={errors.pass}>
-        <PasswordInput id="regPass" placeholder="Min. 8 characters"
-          value={pass} onChange={setPass} autoComplete="new-password" />
-        {pass && (
-          <>
-            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
-              <div className="h-full rounded-full transition-all" style={{ width: strength.width, background: strength.color }} />
-            </div>
-            <span className="text-xs font-medium" style={{ color: strength.color }}>{strength.label}</span>
-          </>
-        )}
-      </Field>
-
-      <Field label="Confirm Password" error={errors.confirm}>
-        <PasswordInput id="regConfirm" placeholder="Re-enter password"
-          value={confirm} onChange={setConfirm} autoComplete="new-password" />
-      </Field>
+      <InputField
+        id="regPhone"
+        label="Mobile Number"
+        type="tel"
+        value={phone}
+        onChange={v => setPhone(v.replace(/\D/g, '').slice(0, 10))}
+        icon={<Phone size={16} />}
+        prefix="+91"
+        error={errors.phone}
+        autoComplete="tel"
+        maxLength={10}
+      />
 
       <div>
-        <label className="flex items-start gap-2 text-sm text-ink-muted">
-          <input type="checkbox" checked={terms} onChange={e => setTerms(e.target.checked)} className="mt-0.5 accent-brand-purple" />
+        <PasswordInput
+          id="regPass"
+          label="Password"
+          value={pass}
+          onChange={setPass}
+          error={errors.pass}
+          autoComplete="new-password"
+        />
+        {pass && (
+          <div className="mt-1.5 flex flex-col gap-1">
+            <div className="h-1 w-full overflow-hidden rounded-full bg-gray-100">
+              <div
+                className={cn('h-full rounded-full transition-all duration-300', strength.bg)}
+                style={{ width: strength.width }}
+              />
+            </div>
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-gray-400">Password strength:</span>
+              <span className="font-semibold" style={{ color: strength.color }}>{strength.label}</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <PasswordInput
+        id="regConfirm"
+        label="Confirm Password"
+        value={confirm}
+        onChange={setConfirm}
+        error={errors.confirm || (confirm && pass !== confirm ? 'Passwords do not match' : undefined)}
+        autoComplete="new-password"
+      />
+
+      <div>
+        <label className="flex items-start gap-2 text-xs text-gray-600 select-none cursor-pointer">
+          <input
+            type="checkbox"
+            checked={terms}
+            onChange={e => setTerms(e.target.checked)}
+            className="mt-0.5 h-3.5 w-3.5 rounded border-gray-300 accent-brand-purple"
+          />
           <span>
-            I agree to the <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => e.preventDefault()}>Terms of Service</a> &amp; <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => e.preventDefault()}>Privacy Policy</a>
+            I agree to the{' '}
+            <a href="#" className="font-semibold text-brand-purple hover:underline" onClick={e => e.preventDefault()}>Terms of Service</a> &amp;{' '}
+            <a href="#" className="font-semibold text-brand-purple hover:underline" onClick={e => e.preventDefault()}>Privacy Policy</a>
           </span>
         </label>
-        {errors.terms && <span className="mt-1 block text-xs text-red-600">{errors.terms}</span>}
+        {errors.terms && <span className="mt-1 block text-xs font-medium text-red-500">{errors.terms}</span>}
       </div>
 
       {submitError && (
-        <div className="rounded-lg bg-red-50 px-3.5 py-2.5 text-sm text-red-600" role="alert">
+        <div className="rounded-lg bg-red-50 p-2.5 text-xs font-medium text-red-600" role="alert">
           {submitError}
         </div>
       )}
 
-      <SubmitButton loading={loading} loadingLabel="Creating account...">Create My Account</SubmitButton>
+      <SubmitButton loading={loading} loadingLabel="Creating account...">Create account</SubmitButton>
 
-      <p className="text-center text-sm text-ink-muted">
-        Already have an account? <a href="#" className="font-semibold text-brand-purple hover:underline" onClick={e => { e.preventDefault(); onLogin(); }}>Login here</a>
+      <p className="text-center text-xs text-gray-500">
+        Already have an account?{' '}
+        <button
+          type="button"
+          className="font-bold text-brand-purple hover:underline"
+          onClick={onLogin}
+        >
+          Log in
+        </button>
       </p>
     </form>
   );
 };
 
-// ── Phone / OTP Form (currently unreachable — no 'phone' tab wired into the
-//    switch below; kept and re-styled in case it's enabled in future) ──────
-export const PhoneForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUser) => void }> = ({ onBack, onSuccess }) => {
-  const [phone, setPhone] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [countdown, setCountdown] = useState(0);
-  const [phoneErr, setPhoneErr] = useState('');
-  const [otpError, setOtpError] = useState('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const boxRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  const sendOTP = () => {
-    if (!validatePhone(phone)) { setPhoneErr('Enter a valid 10-digit mobile number'); return; }
-    setPhoneErr('');
-    setOtpSent(true);
-    setCountdown(30);
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setCountdown(c => { if (c <= 1) { clearInterval(timerRef.current!); return 0; } return c - 1; });
-    }, 1000);
-    setTimeout(() => boxRefs.current[0]?.focus(), 100);
-  };
-
-  const handleOtpInput = (i: number, val: string) => {
-    const v = val.replace(/\D/, '');
-    const newOtp = [...otp];
-    newOtp[i] = v;
-    setOtp(newOtp);
-    if (v && i < 5) boxRefs.current[i + 1]?.focus();
-  };
-
-  const handleOtpKey = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[i] && i > 0) boxRefs.current[i - 1]?.focus();
-  };
-
-  const verify = () => {
-    if (otp.join('').length < 6) {
-      setOtpError('Please enter the 6-digit OTP');
-      return;
-    }
-    setOtpError('');
-    onSuccess({ id: `u_${Date.now()}`, firstName: 'User', lastName: '', email: `+91${phone}`, role: 'user' });
-  };
-
-  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div>
-        <h2 className="text-xl font-bold text-ink">Phone Login 📱</h2>
-        <p className="mt-1 text-sm text-ink-muted">We'll send an OTP to verify your number</p>
-      </div>
-
-      <Field label="Mobile Number" error={phoneErr}>
-        <div className={fieldWrapClass}>
-          <Phone size={16} className="flex-shrink-0 text-ink-muted" />
-          <span className="flex-shrink-0 text-sm text-ink-muted">+91</span>
-          <input type="tel" placeholder="9876543210" value={phone}
-            onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))} className={fieldInputClass} />
-        </div>
-      </Field>
-
-      {!otpSent && (
-        <button type="button" className="rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark" onClick={sendOTP}>Send OTP</button>
-      )}
-
-      {otpSent && (
-        <>
-          <Field label="Enter OTP" error={otpError}>
-            <div className="flex gap-2">
-              {otp.map((v, i) => (
-                <input
-                  key={i}
-                  ref={el => { boxRefs.current[i] = el; }}
-                  className="h-12 w-10 rounded-lg border border-border text-center text-lg font-semibold outline-none focus:border-brand-purple-light focus:ring-2 focus:ring-brand-purple-light"
-                  maxLength={1}
-                  type="text"
-                  inputMode="numeric"
-                  value={v}
-                  onChange={e => handleOtpInput(i, e.target.value)}
-                  onKeyDown={e => handleOtpKey(i, e)}
-                />
-              ))}
-            </div>
-          </Field>
-          <div className="text-sm text-ink-muted">
-            {countdown > 0
-              ? <>Resend OTP in <strong className="text-ink">{countdown}s</strong></>
-              : <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => { e.preventDefault(); sendOTP(); }}>Resend OTP</a>
-            }
-          </div>
-          <button type="button" className="rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark" onClick={verify}>Verify &amp; Login</button>
-        </>
-      )}
-
-      <p className="text-center text-sm text-ink-muted">
-        <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => { e.preventDefault(); onBack(); }}>← Back to login</a>
-      </p>
-    </div>
-  );
-};
-
-// ── Forgot Password ────────────────────────────────
+// ── Forgot Password Form ───────────────────────────
 const ForgotForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUser, token?: string) => void }> = ({ onBack, onSuccess }) => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
@@ -610,33 +637,50 @@ const ForgotForm: React.FC<{ onBack: () => void; onSuccess: (user: AuthUser, tok
   };
 
   return (
-    <div className="flex flex-col gap-4">
+    <form onSubmit={e => { e.preventDefault(); send(); }} className="flex flex-col gap-4 animate-fadeIn" noValidate>
       <div>
-        <h2 className="text-xl font-bold text-ink">Reset Password 🔑</h2>
-        <p className="mt-1 text-sm text-ink-muted">Enter your email and we'll send a reset link</p>
+        <h2 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">Reset password</h2>
+        <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">Enter your email and we'll send you a reset link</p>
       </div>
-      <Field label="Email Address" error={error}>
-        <div className={fieldWrapClass}>
-          <Mail size={16} className="flex-shrink-0 text-ink-muted" />
-          <input type="email" placeholder="you@email.com" value={email}
-            onChange={e => setEmail(e.target.value)} className={fieldInputClass} />
-        </div>
-      </Field>
-      <button type="button" className="rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark" onClick={send}>Send Reset Link</button>
-      <p className="text-center text-sm text-ink-muted">
-        <a href="#" className="font-medium text-brand-purple hover:underline" onClick={e => { e.preventDefault(); onBack(); }}>← Back to login</a>
-      </p>
-    </div>
+
+      <InputField
+        id="forgotEmail"
+        label="Email Address"
+        type="email"
+        value={email}
+        onChange={setEmail}
+        icon={<Mail size={16} />}
+        error={error}
+        autoComplete="email"
+      />
+
+      <SubmitButton loading={false} loadingLabel="Sending...">Send reset link</SubmitButton>
+
+      <button
+        type="button"
+        className="text-center text-xs font-semibold text-brand-purple dark:text-purple-400 hover:underline"
+        onClick={onBack}
+      >
+        ← Back to log in
+      </button>
+    </form>
   );
 };
 
 // ── Success Panel ──────────────────────────────────
 const SuccessPanel: React.FC<{ title: string; msg: string; onClose: () => void }> = ({ title, msg, onClose }) => (
-  <div className="flex flex-col items-center gap-3 py-6 text-center">
-    <div className="text-5xl">🎉</div>
-    <h2 className="text-xl font-bold text-ink">{title}</h2>
-    <p className="text-sm text-ink-muted">{msg}</p>
-    <button className="mt-2 rounded-lg bg-brand-purple px-6 py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark" onClick={onClose}>Start Celebrating →</button>
+  <div className="flex flex-col items-center gap-3 py-6 text-center animate-scaleIn">
+    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-50 text-brand-purple">
+      <Sparkles size={24} />
+    </div>
+    <h2 className="text-xl font-bold text-gray-900">{title}</h2>
+    <p className="text-xs text-gray-500 max-w-xs">{msg}</p>
+    <button
+      className="mt-2 flex h-[47px] w-full max-w-xs items-center justify-center rounded-xl bg-brand-purple text-sm font-bold text-white shadow-md shadow-brand-purple/20 transition-all hover:bg-brand-purple-dark active:scale-[0.98]"
+      onClick={onClose}
+    >
+      Continue →
+    </button>
   </div>
 );
 
@@ -665,79 +709,152 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, tab, onClose, onSe
 
   if (!isOpen) return null;
 
+  const isRegister = tab === 'register';
+
   return (
     <>
-      <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      {/* Soft Backdrop */}
       <div
-        className="fixed inset-0 z-[1001] mx-auto my-auto flex h-fit max-h-[92vh] w-[min(920px,94vw)] flex-col overflow-y-auto rounded-2xl bg-white shadow-2xl sm:flex-row sm:self-center"
-        style={{ top: '4vh', bottom: '4vh' }}
+        className="fixed inset-0 z-[10000] bg-black/50 backdrop-blur-md transition-opacity duration-300 animate-fadeIn"
+        onClick={onClose}
+      />
+
+      {/* Centered Modal Container — Sizes naturally according to content height */}
+      <div
+        className="fixed inset-0 z-[10001] flex items-center justify-center p-3 sm:p-5"
         role="dialog"
         aria-modal="true"
       >
-        {/* Left decorative panel */}
-        <div className="relative hidden w-[38%] flex-shrink-0 overflow-hidden bg-gradient-to-br from-brand-purple to-brand-pink p-8 text-white sm:block">
-          <div className="absolute -left-10 -top-10 h-40 w-40 rounded-full bg-white/10" />
-          <div className="absolute -right-6 top-1/3 h-28 w-28 rounded-full bg-white/10" />
-          <div className="absolute bottom-0 left-1/4 h-32 w-32 rounded-full bg-white/10" />
-          <div className="relative flex h-full flex-col justify-center">
-            <div className="text-xl font-extrabold">TheDecorParty</div>
-            <div className="mt-2 text-sm text-white/85">Bangalore's #1 Surprise &amp; Decoration Platform</div>
-            <div className="mt-8 flex flex-col gap-4">
-              <div className="flex items-center gap-3 text-sm"><Gift size={18} /><span>Exclusive member discounts</span></div>
-              <div className="flex items-center gap-3 text-sm"><Zap size={18} /><span>Priority booking &amp; support</span></div>
-              <div className="flex items-center gap-3 text-sm"><PartyPopper size={18} /><span>Track &amp; manage your events</span></div>
-              <div className="flex items-center gap-3 text-sm"><Mailbox size={18} /><span>Personalised occasion reminders</span></div>
+        <div className="relative flex max-h-[88vh] w-full max-w-[860px] flex-col overflow-hidden rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl shadow-purple-950/20 transition-all duration-300 lg:flex-row animate-scaleIn">
+          {/* Left branding section (Desktop only) — Visually balanced vertical layout */}
+          <div
+            className={cn(
+              'relative hidden w-[360px] flex-shrink-0 flex-col justify-between overflow-hidden p-8 text-white transition-all duration-500 lg:flex',
+              isRegister
+                ? 'bg-gradient-to-br from-purple-950 via-purple-900 to-slate-900'
+                : 'bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950'
+            )}
+          >
+            {/* Background image overlay */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity transition-all duration-500"
+              style={{
+                backgroundImage: isRegister
+                  ? 'url(https://images.unsplash.com/photo-1530103862676-de8c9debad1d?auto=format&fit=crop&w=1000&q=80)'
+                  : 'url(https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80)'
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/80 to-transparent" />
+
+            {/* Top Brand Header */}
+            <div className="relative z-10">
+              <div className="flex items-center gap-2.5">
+                <img src="/final_logo.jpeg" alt="TheDecorParty" className="h-8 w-8 rounded-lg object-contain" />
+                <span className="text-lg font-bold tracking-tight text-white">
+                  TheDecor<span className="text-purple-300">Party</span>
+                </span>
+              </div>
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-purple-200 backdrop-blur-sm">
+                {isRegister ? '✨ Start Planning' : '🔐 Secure Sign In'}
+              </div>
+            </div>
+
+            {/* Middle Headline — Well distributed */}
+            <div className="relative z-10 my-auto py-8">
+              <h3 className="text-2xl font-black tracking-tight text-white leading-tight">
+                {isRegister ? "Let's Create Your Account" : 'Welcome Back'}
+              </h3>
+              <p className="mt-2.5 text-xs text-slate-300 leading-relaxed font-normal">
+                {isRegister
+                  ? 'Start planning unforgettable celebrations in just a few minutes.'
+                  : 'Continue planning your celebrations with TheDecorParty.'}
+              </p>
+              {/* Graphic accent */}
+              <div className="mt-5 flex items-center gap-1.5">
+                <div className="h-1 w-7 rounded-full bg-purple-400/60" />
+                <div className="h-1 w-2 rounded-full bg-purple-400/30" />
+              </div>
+            </div>
+
+            {/* Bottom Copyright */}
+            <div className="relative z-10 text-[11px] text-slate-400">
+              © {new Date().getFullYear()} TheDecorParty. All rights reserved.
             </div>
           </div>
-        </div>
 
-        {/* Right form panel */}
-        <div className="relative flex-1 p-6 sm:p-8">
-          <button className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-black/5" onClick={onClose} aria-label="Close">
-            <X size={18} />
-          </button>
+          {/* Right Form Container — Hugs content height without dead bottom space */}
+          <div className="relative flex flex-1 flex-col overflow-y-auto p-5 sm:p-7 lg:p-8">
+            {/* Close button */}
+            <button
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-200 dark:hover:bg-slate-700 hover:text-gray-900 dark:hover:text-white"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <X size={16} />
+            </button>
 
-          {(tab === 'login' || tab === 'register') && (
-            <div className="relative mb-6 flex rounded-lg bg-gray-100 p-1">
-              <button
-                className={cn('relative z-10 flex-1 rounded-md py-2 text-sm font-semibold transition-colors', tab === 'login' ? 'text-white' : 'text-ink-muted')}
-                onClick={() => onSetTab('login')}
-              >Login</button>
-              <button
-                className={cn('relative z-10 flex-1 rounded-md py-2 text-sm font-semibold transition-colors', tab === 'register' ? 'text-white' : 'text-ink-muted')}
-                onClick={() => onSetTab('register')}
-              >Register</button>
-              <div
-                className={cn(
-                  'absolute inset-y-1 w-[calc(50%-4px)] rounded-md bg-brand-purple transition-transform duration-200',
-                  tab === 'register' ? 'translate-x-[calc(100%+8px)]' : 'translate-x-0'
-                )}
+            {/* Prominent High-Contrast Toggle */}
+            {(tab === 'login' || tab === 'register') && (
+              <div className="relative mb-6 flex items-center rounded-2xl bg-gray-100/90 dark:bg-slate-800/90 p-1 w-full max-w-[240px] select-none border border-gray-200/80 dark:border-slate-700 shadow-inner">
+                <button
+                  type="button"
+                  className={cn(
+                    'relative z-10 flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition-all duration-300 text-center',
+                    tab === 'login'
+                      ? 'text-white scale-100'
+                      : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/40'
+                  )}
+                  onClick={() => onSetTab('login')}
+                >
+                  Log in
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    'relative z-10 flex-1 rounded-xl py-2 text-xs sm:text-sm font-bold transition-all duration-300 text-center',
+                    tab === 'register'
+                      ? 'text-white scale-100'
+                      : 'text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-slate-700/40'
+                  )}
+                  onClick={() => onSetTab('register')}
+                >
+                  Register
+                </button>
+
+                {/* Sliding Active Indicator Pill */}
+                <div
+                  className={cn(
+                    'absolute inset-y-1 w-[calc(50%-4px)] rounded-xl bg-gradient-to-r from-brand-purple to-purple-700 shadow-md shadow-brand-purple/30 transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)]',
+                    tab === 'register' ? 'translate-x-[calc(100%+8px)]' : 'translate-x-0'
+                  )}
+                />
+              </div>
+            )}
+
+            {/* Form Tabs */}
+            {tab === 'login' && (
+              <LoginForm
+                onSuccess={(u, token) => handleSuccess(u, token, 'Welcome back', 'You are now logged into your account.')}
+                onRegister={() => onSetTab('register')}
+                onForgot={() => { onClose(); navigate('/forgot-password'); }}
               />
-            </div>
-          )}
-
-          {tab === 'login' && (
-            <LoginForm
-              onSuccess={(u, token) => handleSuccess(u, token, 'Welcome back! 👋', "You're now logged into TheDecorParty")}
-              onRegister={() => onSetTab('register')}
-              onForgot={() => { onClose(); navigate('/forgot-password'); }}
-            />
-          )}
-          {tab === 'register' && (
-            <RegisterForm
-              onSuccess={(u, token) => handleSuccess(u, token, 'Account created! 🎉', `Welcome, ${u.firstName}! Start planning your first event`)}
-              onLogin={() => onSetTab('login')}
-            />
-          )}
-          {tab === 'forgot' && (
-            <ForgotForm
-              onBack={() => onSetTab('login')}
-              onSuccess={(u, token) => handleSuccess(u, token, 'Email Sent! 📧', `A password reset link has been sent to ${u.email}`)}
-            />
-          )}
-          {tab === 'success' && successData && (
-            <SuccessPanel title={successData.title} msg={successData.msg} onClose={onClose} />
-          )}
+            )}
+            {tab === 'register' && (
+              <RegisterForm
+                onSuccess={(u, token) => handleSuccess(u, token, 'Account created', `Welcome, ${u.firstName}! Your account is ready.`)}
+                onLogin={() => onSetTab('login')}
+              />
+            )}
+            {tab === 'forgot' && (
+              <ForgotForm
+                onBack={() => onSetTab('login')}
+                onSuccess={(u, token) => handleSuccess(u, token, 'Email sent', `A password reset link has been sent to ${u.email}`)}
+              />
+            )}
+            {tab === 'success' && successData && (
+              <SuccessPanel title={successData.title} msg={successData.msg} onClose={onClose} />
+            )}
+          </div>
         </div>
       </div>
     </>

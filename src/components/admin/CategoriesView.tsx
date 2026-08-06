@@ -317,60 +317,83 @@ export const CategoriesView = () => {
   );
 
   return (
-    <div className="adm-section">
-      <div className="adm-section-header">
-        <h2 className="adm-section-title">Categories</h2>
-        <button className="adm-btn-primary" onClick={openAdd}>+ Add Category</button>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Product Categories</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Organize party themes, decor types, and event subcategories.</p>
+        </div>
+        <button 
+          type="button" 
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer" 
+          onClick={openAdd}
+        >
+          + Add Category
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {cats.map((cat) => (
-          <div key={cat._id} className={cn('overflow-hidden rounded-card border border-border bg-white shadow-card', !cat.active && 'opacity-60')}>
-            {cat.image && (
-              <div className="h-32 w-full bg-gray-100">
-                <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
+          <div key={cat._id} className={cn('overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between transition-all', !cat.active && 'opacity-60')}>
+            <div>
+              {cat.image ? (
+                <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
+                  <span className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border ${
+                    cat.active ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                  }`}>
+                    {cat.active ? 'Active' : 'Hidden'}
+                  </span>
+                </div>
+              ) : (
+                <div className="h-28 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-400">No Image</div>
+              )}
+              <div className="p-4 space-y-1">
+                <div className="text-sm font-bold text-slate-900 dark:text-white">{cat.name}</div>
+                <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{cat.productCount || 0} products &middot; /{cat.slug}</div>
               </div>
-            )}
-            <div className="p-4">
-              <div className="text-sm font-semibold text-ink">{cat.name}</div>
-              <div className="mt-0.5 text-xs text-ink-muted">{cat.productCount || 0} products &middot; /{cat.slug}</div>
+            </div>
 
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(cat)}>
+            <div className="p-4 pt-0 space-y-2">
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" onClick={() => openEdit(cat)}>
                   <Pencil size={12} /> Edit
                 </button>
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(cat._id, !cat.active)}>
+                <button type="button" className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" onClick={() => toggle(cat._id, !cat.active)}>
                   {cat.active ? <EyeOff size={12} /> : <Eye size={12} />} {cat.active ? "Hide" : "Show"}
                 </button>
                 <button
-                  className="flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
                   onClick={() => setDeleteConfirm({ id: cat._id, name: cat.name })}
                 >
-                  <Trash2 size={12} /> Delete
-                </button>
-                <button
-                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
-                  onClick={() => { setSelectedCategory(cat); setShowSubsModal(true); }}
-                >
-                  <Layers size={12} /> Sub ({cat.subcategories?.length || 0})
-                </button>
-                <button
-                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
-                  onClick={() => { setSelectedCategory(cat); setShowAddSubModal(true); }}
-                >
-                  <Plus size={12} /> Sub
-                </button>
-                <button
-                  className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5"
-                  onClick={() => copyToClipboard(`/category/${encodeURIComponent(cat.name)}`)}
-                >
-                  <Copy size={12} /> Copy Link
+                  <Trash2 size={12} />
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center gap-1.5 text-xs text-ink-muted">
-                <span className={cn('h-1.5 w-1.5 rounded-full', cat.active ? 'bg-emerald-500' : 'bg-gray-300')} />
-                {cat.active ? "Active" : "Hidden"}
+              <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 dark:border-slate-800 pt-2.5">
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/50 px-2.5 py-1.5 text-[11px] font-bold text-brand-purple dark:text-purple-300 hover:bg-purple-100 cursor-pointer"
+                  onClick={() => { setSelectedCategory(cat); setShowSubsModal(true); }}
+                >
+                  <Layers size={12} /> Subs ({cat.subcategories?.length || 0})
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 cursor-pointer"
+                  onClick={() => { setSelectedCategory(cat); setShowAddSubModal(true); }}
+                >
+                  <Plus size={12} /> Add Sub
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-100 cursor-pointer"
+                  onClick={() => copyToClipboard(`/category/${encodeURIComponent(cat.name)}`)}
+                  title="Copy Category Route Link"
+                >
+                  <Copy size={12} />
+                </button>
               </div>
             </div>
           </div>

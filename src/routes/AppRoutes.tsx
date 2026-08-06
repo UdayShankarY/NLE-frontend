@@ -7,6 +7,8 @@ import OrderDetailsPage from '../pages/OrderDetailsPage.tsx';
 import TermsPageRoute from '../pages/TermsPage';
 import AdminPage from '../pages/AdminPage';
 import WishlistPage from '../pages/WishlistPage';
+import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import ProfilePage from '../pages/ProfilePage';
@@ -46,6 +48,8 @@ export default function AppRoutes() {
       <ScrollToTop />
       <Routes>
         <Route path="/" element={<App />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/category/:category" element={<App />} />
         <Route path="/category/:category/:subcategory" element={<App />} />
         <Route path="/product/:id" element={<ProductPage />} />

@@ -425,58 +425,82 @@ export const ProductsView = () => {
   };
 
   return (
-    <div className="adm-section">
-      <div className="adm-section-header">
-        <h2 className="adm-section-title">Products</h2>
-        <button className="adm-btn-primary" onClick={openAdd}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Event Decoration Packages</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Manage decor packages, pricing, inclusions, and photo galleries.</p>
+        </div>
+        <button 
+          type="button" 
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer" 
+          onClick={openAdd}
+        >
           + Add Product
         </button>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {products.map((prod) => (
-          <div key={prod._id} className={cn('overflow-hidden rounded-card border border-border bg-white shadow-card', !prod.active && 'opacity-60')}>
-            <div className="relative h-40 w-full bg-gray-100">
-              <img src={prod.image} alt={prod.name} className="h-full w-full object-cover" />
-              {prod.badge && (
-                <span className={cn('absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[11px] font-bold', badgeColorClass[prod.badgeColor] || badgeColorClass.purple)}>
-                  {prod.badge}
-                </span>
-              )}
-              {prod.featured && (
-                <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-amber-500">
-                  <Star size={14} fill="currentColor" />
-                </span>
-              )}
-            </div>
-            <div className="p-4">
-              <h3 className="truncate text-sm font-semibold text-ink">{prod.name}</h3>
-              <p className="mt-0.5 text-xs text-ink-muted">
-                {prod.categoryName} {prod.subcategory && `\u00b7 ${prod.subcategory}`}
-              </p>
-              <div className="mt-2 flex items-baseline gap-2">
-                <span className="text-base font-bold text-ink">&#8377;{prod.price}</span>
-                {(prod.originalPrice ?? 0) > 0 && (
-                  <span className="text-xs text-ink-muted line-through">&#8377;{prod.originalPrice}</span>
+          <div key={prod._id} className={cn('overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between transition-all', !prod.active && 'opacity-60')}>
+            <div>
+              <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                <img src={prod.image} alt={prod.name} className="h-full w-full object-cover" />
+                {prod.badge && (
+                  <span className={cn('absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border', badgeColorClass[prod.badgeColor] || badgeColorClass.purple)}>
+                    {prod.badge}
+                  </span>
+                )}
+                {prod.featured && (
+                  <span className="absolute right-2.5 top-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 dark:bg-slate-900/90 text-amber-500 shadow-xs">
+                    <Star size={14} fill="currentColor" />
+                  </span>
                 )}
               </div>
-              <div className="mt-3 flex gap-1.5">
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(prod)}>
-                  <Pencil size={12} /> Edit
-                </button>
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => copyToClipboard(`/product/${prod._id}`)}>
-                  <Copy size={12} /> Copy Link
-                </button>
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(prod._id, !prod.active)}>
-                  {prod.active ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
-                <button
-                  className="flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
-                  onClick={() => setDeleteConfirm({ id: prod._id, name: prod.name })}
-                >
-                  <Trash2 size={12} />
-                </button>
+              <div className="p-4 space-y-1">
+                <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">{prod.name}</h3>
+                <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 truncate">
+                  {prod.categoryName} {prod.subcategory && `\u00b7 ${prod.subcategory}`}
+                </p>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="text-sm font-black text-brand-purple dark:text-purple-400">&#8377;{Number(prod.price || 0).toLocaleString('en-IN')}</span>
+                  {(prod.originalPrice ?? 0) > 0 && (
+                    <span className="text-xs text-slate-400 line-through">&#8377;{Number(prod.originalPrice || 0).toLocaleString('en-IN')}</span>
+                  )}
+                </div>
               </div>
+            </div>
+
+            <div className="p-4 pt-0 flex items-center gap-1.5">
+              <button 
+                type="button" 
+                className="flex-1 inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" 
+                onClick={() => openEdit(prod)}
+              >
+                <Pencil size={12} /> Edit
+              </button>
+              <button 
+                type="button" 
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer" 
+                onClick={() => copyToClipboard(`/product/${prod._id}`)}
+                title="Copy Product Link"
+              >
+                <Copy size={12} />
+              </button>
+              <button 
+                type="button" 
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer" 
+                onClick={() => toggle(prod._id, !prod.active)}
+              >
+                {prod.active ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
+                onClick={() => setDeleteConfirm({ id: prod._id, name: prod.name })}
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           </div>
         ))}

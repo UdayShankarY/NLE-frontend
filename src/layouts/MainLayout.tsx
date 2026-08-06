@@ -69,7 +69,7 @@ export default function MainLayout({
   onAssistantOpen,
   onLogoClick,
   showAssistantButton = false,
-  showMobileMenu = false,
+  showMobileMenu = true,
   categories = [],
   onSelectCategory,
   assistantOpen,
@@ -154,7 +154,7 @@ export default function MainLayout({
       {hideShell ? (
         children
       ) : (
-        <div className="min-h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors duration-200">
           <Header
             auth={auth}
             t={t as Translations}
@@ -166,7 +166,7 @@ export default function MainLayout({
             onSelectCategory={onSelectCategory}
           />
           <main className="flex-1 overflow-hidden">{children}</main>
-          <Footer t={t as any} onPageOpen={onTermsPageOpen} />
+          <Footer t={t as any} onPageOpen={onTermsPageOpen} categories={categories} onSelectCategory={onSelectCategory} />
           <AssistantPanel
             open={assistantOpen}
             onClose={onAssistantClose}
@@ -176,7 +176,6 @@ export default function MainLayout({
             onSubmit={onAssistantSubmit}
             inputRef={assistantInputRef}
           />
-          <FloatingActionMenu onAssistantOpen={onAssistantOpen} />
           {cartOpen && (
             <CartPage
               items={cartItems}
@@ -192,6 +191,7 @@ export default function MainLayout({
           <AuthModal isOpen={authModalOpen} tab={authModalTab} onClose={onCloseAuth} onSetTab={onSetAuthTab} onLogin={onLogin || internalHandleLogin} />
         </div>
       )}
+      {!hideShell && <FloatingActionMenu onAssistantOpen={onAssistantOpen} />}
     </>
   );
 }

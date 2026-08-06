@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'react-toastify';
 import { Eye, EyeOff, Pencil, Search, Trash2, Upload, Link as LinkIcon } from 'lucide-react';
 import { Modal } from './Modal';
@@ -23,7 +23,6 @@ export const AddonsView = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadedImage, setUploadedImage] = useState('');
   const [imageUrlInput, setImageUrlInput] = useState('');
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -254,93 +253,150 @@ export const AddonsView = () => {
   const previewIsValid = previewUrl ? isValidImageUrl(previewUrl) : false;
 
   return (
-    <div className="adm-section">
-      <div className="adm-section-header">
-        <h2 className="adm-section-title">Add-ons</h2>
-        <button className="adm-btn-primary" onClick={openAdd}>+ Add Add-on</button>
-      </div>
-
-      <div className="mb-4 grid gap-3 md:grid-cols-[1fr,180px,180px]">
-        <div className="relative">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-          <input
-            className="adm-input pl-9"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search add-ons"
-          />
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Product Add-ons</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Manage extra decor elements (balloons, lights, props) for event packages.</p>
         </div>
-        <select className="adm-input" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}>
-          <option value="all">All</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-        <div className="text-sm text-ink-muted flex items-center justify-end">{filtered.length} results</div>
+        <button 
+          type="button"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer" 
+          onClick={openAdd}
+        >
+          + Add Add-on
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex flex-col sm:flex-row items-center gap-2 w-full sm:max-w-xl">
+          <div className="relative w-full">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search add-on title or category..."
+            />
+          </div>
+          <select 
+            className="w-full sm:w-40 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-900 dark:text-white outline-none" 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+          >
+            <option value="all">All Statuses</option>
+            <option value="active">Active Only</option>
+            <option value="inactive">Inactive Only</option>
+          </select>
+        </div>
+
+        <div className="text-xs font-bold text-slate-400 dark:text-slate-500 self-end sm:self-center">
+          {filtered.length} total add-ons
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {paged.map((addon) => (
-          <div key={addon._id} className={cn('overflow-hidden rounded-card border border-border bg-white shadow-card', !addon.active && 'opacity-60')}>
-            <div className="relative h-40 w-full bg-gray-100">
-              {addon.image ? <img src={addon.image} alt={addon.name} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center text-sm text-ink-muted">No image</div>}
-            </div>
-            <div className="p-4">
-              <h3 className="truncate text-sm font-semibold text-ink">{addon.name}</h3>
-              <p className="mt-1 text-xs text-ink-muted">{addon.category || 'General'}</p>
-              <div className="mt-2 text-base font-bold text-brand-purple">₹{addon.price.toLocaleString()}</div>
-              <p className="mt-2 line-clamp-2 text-xs text-ink-muted">{addon.description || 'No description provided.'}</p>
-              <div className="mt-3 flex gap-1.5">
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(addon)}>
-                  <Pencil size={12} /> Edit
-                </button>
-                <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(addon._id, !addon.active)}>
-                  {addon.active ? <EyeOff size={12} /> : <Eye size={12} />}
-                </button>
-                <button className="flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50" onClick={() => setDeleteConfirm({ id: addon._id, name: addon.name })}>
-                  <Trash2 size={12} />
-                </button>
+          <div key={addon._id} className={cn('overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between transition-all', !addon.active && 'opacity-60')}>
+            <div>
+              <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                {addon.image ? (
+                  <img src={addon.image} alt={addon.name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs font-semibold text-slate-400">No Image</div>
+                )}
+                <span className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border ${
+                  addon.active ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                }`}>
+                  {addon.active ? 'Active' : 'Hidden'}
+                </span>
               </div>
+              <div className="p-4 space-y-1.5">
+                <h3 className="truncate text-sm font-bold text-slate-900 dark:text-white">{addon.name}</h3>
+                <div className="text-xs font-black text-brand-purple dark:text-purple-400">₹{Number(addon.price || 0).toLocaleString('en-IN')}</div>
+                <p className="line-clamp-2 text-xs font-medium text-slate-500 dark:text-slate-400">{addon.description || 'No description provided.'}</p>
+              </div>
+            </div>
+
+            <div className="p-4 pt-0 flex items-center gap-1.5">
+              <button 
+                type="button"
+                className="flex-1 inline-flex items-center justify-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" 
+                onClick={() => openEdit(addon)}
+              >
+                <Pencil size={12} /> Edit
+              </button>
+              <button 
+                type="button"
+                className="inline-flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" 
+                onClick={() => toggle(addon._id, !addon.active)}
+              >
+                {addon.active ? <EyeOff size={14} /> : <Eye size={14} />}
+              </button>
+              <button 
+                type="button"
+                className="inline-flex items-center justify-center rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 p-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer" 
+                onClick={() => setDeleteConfirm({ id: addon._id, name: addon.name })}
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
           </div>
         ))}
       </div>
 
       {filtered.length > PAGE_SIZE && (
-        <div className="mt-4 flex items-center justify-between">
-          <button className="adm-btn-ghost" disabled={safePage === 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))}>Previous</button>
-          <span className="text-sm text-ink-muted">Page {safePage} of {pageCount}</span>
-          <button className="adm-btn-ghost" disabled={safePage === pageCount} onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))}>Next</button>
+        <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-4">
+          <button 
+            type="button"
+            className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 cursor-pointer" 
+            disabled={safePage === 1} 
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+          >
+            Previous
+          </button>
+          <span className="text-xs font-bold text-slate-900 dark:text-white">Page {safePage} of {pageCount}</span>
+          <button 
+            type="button"
+            className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 cursor-pointer" 
+            disabled={safePage === pageCount} 
+            onClick={() => setPage((prev) => Math.min(pageCount, prev + 1))}
+          >
+            Next
+          </button>
         </div>
       )}
 
       {showModal && (
         <Modal title={editing ? 'Edit Add-on' : 'Add Add-on'} onClose={() => setShowModal(false)} large>
-          <div className="adm-form">
-            <div className="adm-form-row">
-              <div className="adm-form-col">
-                <label>Name *</label>
-                <input className="adm-input" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Rose Petal Garland" />
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-extrabold uppercase text-slate-400">Name *</label>
+                <input className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white outline-none" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="e.g. Rose Petal Garland" />
               </div>
-              <div className="adm-form-col">
-                <label>Price (₹) *</label>
-                <input type="number" min="0" className="adm-input" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))} />
+              <div>
+                <label className="text-xs font-extrabold uppercase text-slate-400">Price (₹) *</label>
+                <input type="number" min="0" className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white outline-none" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: Number(e.target.value) }))} />
               </div>
             </div>
 
-            <label>Description / Details</label>
-            <textarea className="adm-input adm-textarea" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={4} placeholder="Describe the add-on" />
+            <div>
+              <label className="text-xs font-extrabold uppercase text-slate-400">Description / Details</label>
+              <textarea className="mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-medium text-slate-900 dark:text-white outline-none" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} rows={3} placeholder="Describe the add-on package" />
+            </div>
 
-            <div className="adm-image-mode-tabs">
+            <div className="flex gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
               <button
                 type="button"
-                className={`adm-mode-tab${imageMode === 'upload' ? ' active' : ''}`}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${imageMode === 'upload' ? 'bg-brand-purple text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
                 onClick={() => setImageMode('upload')}
               >
                 <Upload size={13} className="mr-1 inline" /> Upload File
               </button>
               <button
                 type="button"
-                className={`adm-mode-tab${imageMode === 'url' ? ' active' : ''}`}
+                className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${imageMode === 'url' ? 'bg-brand-purple text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
                 onClick={() => setImageMode('url')}
               >
                 <LinkIcon size={13} className="mr-1 inline" /> Image URL
@@ -349,7 +405,7 @@ export const AddonsView = () => {
 
             {imageMode === 'upload' ? (
               <div
-                className="adm-file-upload"
+                className="rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-6 text-center bg-slate-50/50 dark:bg-slate-800/40"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDropUpload}
               >
@@ -358,29 +414,24 @@ export const AddonsView = () => {
                   id="addon-image-upload"
                   accept="image/*"
                   onChange={handleFileUpload}
-                  className="adm-file-input"
+                  className="hidden"
                   disabled={uploading}
                 />
-                <label htmlFor="addon-image-upload" className="adm-file-label">
+                <label htmlFor="addon-image-upload" className="cursor-pointer space-y-1 block">
                   {uploading ? (
-                    <>
-                      <span className="adm-file-icon">&#8987;</span>
-                      <span className="adm-file-text">Uploading...</span>
-                    </>
+                    <div className="text-xs font-bold text-brand-purple">Uploading image to cloud...</div>
                   ) : (
                     <>
-                      <span className="adm-file-icon"><Upload size={20} /></span>
-                      <span className="adm-file-text">
-                        {form.image ? 'Change Image' : 'Choose Image'}
-                      </span>
-                      <span className="adm-file-hint">Drag & drop or browse · Max 5MB</span>
+                      <div className="flex justify-center text-slate-400 mb-2"><Upload size={24} /></div>
+                      <div className="text-xs font-bold text-slate-900 dark:text-white">{form.image ? 'Change Image' : 'Choose Image File'}</div>
+                      <div className="text-[10px] text-slate-400 font-semibold">Drag &amp; drop or click to browse · Max 5MB</div>
                     </>
                   )}
                 </label>
               </div>
             ) : (
               <input
-                className="adm-input"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white outline-none"
                 value={imageUrlInput}
                 onChange={(e) => setImageUrlInput(e.target.value)}
                 placeholder="https://example.com/addon.jpg"
@@ -388,48 +439,32 @@ export const AddonsView = () => {
             )}
 
             {previewUrl && (
-              <div className="adm-image-preview mt-4">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <span className="text-xs font-semibold text-ink">Preview</span>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="adm-remove-image-btn"
-                      onClick={() => {
-                        setUploadedImage('');
-                        setImageUrlInput('');
-                        setForm((f) => ({ ...f, image: '' }));
-                      }}
-                    >
-                      Remove image
-                    </button>
-                    <button
-                      type="button"
-                      className="adm-remove-image-btn"
-                      onClick={() => {
-                        setUploadedImage('');
-                        setImageUrlInput('');
-                        setImageMode('upload');
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      Replace image
-                    </button>
-                  </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-extrabold text-slate-400 uppercase">
+                  <span>Image Preview</span>
+                  <button
+                    type="button"
+                    className="text-rose-600 hover:underline cursor-pointer"
+                    onClick={() => {
+                      setUploadedImage('');
+                      setImageUrlInput('');
+                      setForm((f) => ({ ...f, image: '' }));
+                    }}
+                  >
+                    Remove
+                  </button>
                 </div>
                 {previewIsValid ? (
-                  <img src={previewUrl} alt="Add-on preview" className="h-48 w-full rounded-lg object-cover" onError={() => toast.error('Preview image could not be loaded. Please verify the URL.')} />
+                  <img src={previewUrl} alt="Add-on preview" className="h-44 w-full rounded-xl object-cover border border-slate-200 dark:border-slate-800" onError={() => toast.error('Preview image failed to load.')} />
                 ) : (
-                  <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border text-sm text-ink-muted">Image preview unavailable</div>
+                  <div className="flex h-44 items-center justify-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-400">Image preview unavailable</div>
                 )}
               </div>
             )}
-            {imageMode === 'url' && imageUrlInput.trim() && !isValidImageUrl(imageUrlInput.trim()) && (
-              <p className="mt-2 text-xs text-red-500">Please enter a valid image URL.</p>
-            )}
-            <div className="adm-modal-footer">
-              <button className="adm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="adm-btn-primary" onClick={save}>{editing ? 'Save Changes' : 'Add Add-on'}</button>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+              <button type="button" className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="button" className="rounded-xl bg-brand-purple text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer" onClick={save}>{editing ? 'Save Changes' : 'Add Add-on'}</button>
             </div>
           </div>
         </Modal>

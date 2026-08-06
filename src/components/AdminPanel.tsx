@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import type { AdminView, AuthUser } from '../types';
 import { Sidebar, DashboardView, CategoriesView, ProductsView, AddonsView, ActivitiesView, SlidersView, UsersView, TermsView } from './admin';
 import { getApiUrl } from '../lib/api';
+import { cn } from '../lib/utils';
 
 interface AdminPanelProps {
   user: AuthUser;
@@ -196,39 +197,56 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
   }
 
   return (
-    <div className="flex h-full bg-gray-50">
-      <div className="hidden md:flex w-60 flex-shrink-0">
+    <div className="flex h-screen w-full bg-slate-50 dark:bg-slate-950 overflow-hidden">
+      {/* Desktop Persistent Sidebar */}
+      <div className="hidden lg:flex w-64 flex-shrink-0">
         <Sidebar currentView={view} onViewChange={navigateToView} user={user} />
       </div>
-      <div className={`fixed inset-y-0 left-0 z-[200] w-60 transition-transform duration-200 md:hidden ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <Sidebar currentView={view} onViewChange={navigateToView} user={user} />
+
+      {/* Mobile & Tablet Slide-over Drawer Sidebar */}
+      <div
+        className={cn(
+          'fixed inset-y-0 left-0 z-[200] w-72 transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)] lg:hidden shadow-2xl',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        <Sidebar currentView={view} onViewChange={navigateToView} user={user} onCloseMobile={() => setSidebarOpen(false)} />
       </div>
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-[150] bg-black/50 md:hidden"
+          className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
+      {/* Main Content Workspace */}
       <div className="flex h-full flex-1 flex-col overflow-hidden">
-        <div className="sticky top-0 z-[100] flex h-14 items-center justify-between border-b border-border bg-white px-4 shadow-sm md:px-7">
-          <button
-            className="mr-2 flex items-center justify-center rounded-md p-2 text-ink hover:bg-black/5 md:hidden"
-            onClick={() => setSidebarOpen(o => !o)}
-            aria-label="Toggle menu"
-          >
-            <Menu size={20} />
-          </button>
-          <div className="text-sm text-ink-muted">
-            <span className="font-semibold text-brand-purple">Admin</span> / {view}
-          </div>
+        {/* Top Navbar */}
+        <div className="sticky top-0 z-[100] flex h-16 shrink-0 items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 md:px-7 shadow-xs">
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-ink-muted sm:inline">{user.email}</span>
-            <span className="flex items-center gap-1 rounded-full bg-brand-purple/10 px-2.5 py-1 text-xs font-bold text-brand-purple">
+            <button
+              type="button"
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-2xs transition-all hover:bg-slate-50 dark:hover:bg-slate-700 lg:hidden cursor-pointer"
+              onClick={() => setSidebarOpen(o => !o)}
+              aria-label="Toggle menu"
+            >
+              <Menu size={18} />
+            </button>
+            <div className="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
+              <span className="text-brand-purple dark:text-purple-400">Admin</span> / <span className="capitalize text-slate-900 dark:text-white">{view}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs font-semibold text-slate-500 dark:text-slate-400 sm:inline truncate max-w-[180px]">{user.email}</span>
+            <span className="flex items-center gap-1 rounded-full bg-purple-100 dark:bg-purple-950/60 px-2.5 py-1 text-xs font-extrabold text-brand-purple dark:text-purple-300 border border-purple-200 dark:border-purple-800">
               <Crown size={12} /> ADMIN
             </span>
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-4 md:p-7">
+
+        {/* Dynamic Main View Area */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-7 space-y-6">
           {view === 'dashboard' && <DashboardView />}
           {view === 'categories' && <CategoriesView />}
           {view === 'products' && <ProductsView />}
@@ -236,40 +254,48 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
           {view === 'activities' && <ActivitiesView />}
           {view === 'sliders' && <SlidersView />}
           {view === 'orders' && (
-            <div className="adm-section space-y-4">
-              <div className="flex flex-col gap-3 rounded-card border border-border bg-white p-4 shadow-card md:flex-row md:items-center md:justify-between">
+            <div className="space-y-5">
+              {/* Header card */}
+              <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-lg font-bold text-ink">Orders</h2>
-                  <p className="text-sm text-ink-muted">Search, filter, and update bookings in real time.</p>
+                  <h2 className="text-xl font-black text-slate-900 dark:text-white">Orders &amp; Bookings</h2>
+                  <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Search, filter, and manage customer event bookings in real time.</p>
                 </div>
-                {message && <div className="text-sm text-emerald-600">{message}</div>}
+                {message && <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{message}</div>}
               </div>
 
-              <div className="rounded-card border border-border bg-white p-4 shadow-card">
+              {/* Controls & Search */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <label className="flex items-center gap-2 rounded-lg border border-border bg-gray-50 px-3 py-2 text-sm text-ink">
-                    <Search size={16} />
-                    <input value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} placeholder="Search order or customer" className="w-full bg-transparent outline-none" />
+                  <label className="flex flex-1 items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3.5 py-2.5 text-xs text-slate-900 dark:text-white outline-none">
+                    <Search size={16} className="text-slate-400" />
+                    <input
+                      value={search}
+                      onChange={e => { setSearch(e.target.value); setPage(1); }}
+                      placeholder="Search order number or customer name/email..."
+                      className="w-full bg-transparent outline-none font-semibold placeholder:text-slate-400"
+                    />
                   </label>
-                  <div className="flex flex-wrap gap-2">
-                    <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm text-ink">
-                      <option value="all">All statuses</option>
+
+                  <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                    <select value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(1); }} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none">
+                      <option value="all">All Statuses</option>
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
-                      <option value="in_progress">In progress</option>
+                      <option value="in_progress">In Progress</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm text-ink">
-                      <option value="createdAt">Created</option>
-                      <option value="grandTotal">Amount</option>
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none">
+                      <option value="createdAt">Created Date</option>
+                      <option value="grandTotal">Order Amount</option>
                       <option value="orderNumber">Order Number</option>
                     </select>
-                    <select value={sortDir} onChange={e => setSortDir(e.target.value)} className="rounded-lg border border-border px-3 py-2 text-sm text-ink">
-                      <option value="desc">Desc</option>
-                      <option value="asc">Asc</option>
+                    <select value={sortDir} onChange={e => setSortDir(e.target.value)} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none">
+                      <option value="desc">Newest First</option>
+                      <option value="asc">Oldest First</option>
                     </select>
-                    <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }} className="rounded-lg border border-border px-3 py-2 text-sm text-ink">
+                    <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white outline-none">
                       <option value={10}>10 / page</option>
                       <option value={20}>20 / page</option>
                       <option value={50}>50 / page</option>
@@ -277,81 +303,141 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user }) => {
                   </div>
                 </div>
 
-                <div className="mt-4 overflow-x-auto">
-                  {loadingOrders ? (
-                    <div className="py-8 text-center text-sm text-ink-muted">Loading orders...</div>
-                  ) : orders.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-ink-muted">No orders found.</div>
-                  ) : (
-                    <table className="min-w-full text-left text-sm">
-                      <thead>
-                        <tr className="border-b border-border text-ink-muted">
-                          <th className="px-3 py-2">Order</th>
-                          <th className="px-3 py-2">Customer</th>
-                          <th className="px-3 py-2">Product</th>
-                          <th className="px-3 py-2">Event Date</th>
-                          <th className="px-3 py-2">Amount</th>
-                          <th className="px-3 py-2">Payment</th>
-                          <th className="px-3 py-2">Status</th>
-                          <th className="px-3 py-2">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {orders.map((order) => (
-                          <tr key={order._id} className="border-b border-border/70 align-top">
-                            <td className="px-3 py-3">
-                              <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="text-left">
-                                <div className="font-semibold text-ink">{order.orderNumber}</div>
-                                <div className="text-xs text-ink-muted">{new Date(order.createdAt).toLocaleDateString()}</div>
-                              </button>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="font-medium text-ink">{order.customer?.name || order.booking?.name || 'N/A'}</div>
-                              <div className="text-xs text-ink-muted">{order.customer?.email || 'N/A'}</div>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="font-medium text-ink">{order.product?.name || order.productName}</div>
-                              <div className="text-xs text-ink-muted">{order.categoryName || 'N/A'}</div>
-                            </td>
-                            <td className="px-3 py-3">{order.booking?.eventDate || 'N/A'}</td>
-                            <td className="px-3 py-3">₹{Number(order.grandTotal || order.amount || 0).toLocaleString('en-IN')}</td>
-                            <td className="px-3 py-3">
-                              <div className="text-sm text-ink">{order.paymentStatus || 'pending'}</div>
-                              <div className="text-xs text-ink-muted">{order.paymentMethod || 'whatsapp'}</div>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="text-sm text-ink">{order.orderStatus || 'Pending'}</div>
-                              <div className="text-xs text-ink-muted">{new Date(order.createdAt).toLocaleDateString()}</div>
-                            </td>
-                            <td className="px-3 py-3">
-                              <div className="flex flex-wrap gap-2">
-                                <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="rounded-lg border border-brand-purple px-2.5 py-1.5 text-xs font-semibold text-brand-purple">View Details</button>
-                                <select value={selectedStatuses[order._id] || order.orderStatus || 'Pending'} onChange={e => setSelectedStatuses(prev => ({ ...prev, [order._id]: e.target.value }))} className="rounded-lg border border-border px-2 py-1 text-sm text-ink">
-                                  <option value="Pending">Pending</option>
-                                  <option value="Confirmed">Confirmed</option>
-                                  <option value="Team Assigned">Team Assigned</option>
-                                  <option value="Preparation Started">Preparation Started</option>
-                                  <option value="Decoration In Progress">Decoration In Progress</option>
-                                  <option value="Completed">Completed</option>
-                                  <option value="Cancelled">Cancelled</option>
-                                </select>
-                                <button type="button" onClick={() => void updateOrderStatus(order._id, selectedStatuses[order._id] || order.orderStatus || 'Pending')} className="rounded-lg border border-emerald-200 px-2.5 py-1.5 text-xs font-semibold text-emerald-600">Save</button>
-                                <button type="button" onClick={() => void deleteOrder(order._id)} className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600">Delete</button>
-                              </div>
-                            </td>
+                {/* Orders Content: Table on Desktop, Cards on Mobile/Tablet */}
+                {loadingOrders ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center text-xs font-bold text-slate-400">Loading orders...</div>
+                ) : orders.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center text-xs font-bold text-slate-400">No orders found.</div>
+                ) : (
+                  <>
+                    {/* Desktop Table View */}
+                    <div className="hidden lg:block overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500 uppercase tracking-wider font-extrabold">
+                            <th className="px-3.5 py-3">Order</th>
+                            <th className="px-3.5 py-3">Customer</th>
+                            <th className="px-3.5 py-3">Product Package</th>
+                            <th className="px-3.5 py-3">Event Date</th>
+                            <th className="px-3.5 py-3">Amount</th>
+                            <th className="px-3.5 py-3">Payment</th>
+                            <th className="px-3.5 py-3">Status</th>
+                            <th className="px-3.5 py-3 text-right">Actions</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {orders.map((order) => (
+                            <tr key={order._id} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+                              <td className="px-3.5 py-3 font-extrabold text-slate-900 dark:text-white">
+                                <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="hover:text-brand-purple text-left">
+                                  <div>{order.orderNumber || `#${order._id.slice(-8)}`}</div>
+                                  <div className="text-[10px] font-semibold text-slate-400">{new Date(order.createdAt).toLocaleDateString()}</div>
+                                </button>
+                              </td>
+                              <td className="px-3.5 py-3">
+                                <div className="font-bold text-slate-900 dark:text-white">{order.customer?.name || order.booking?.name || 'N/A'}</div>
+                                <div className="text-[11px] text-slate-400 truncate max-w-[150px]">{order.customer?.email || 'N/A'}</div>
+                              </td>
+                              <td className="px-3.5 py-3">
+                                <div className="font-bold text-slate-900 dark:text-white truncate max-w-[180px]">{order.product?.name || order.productName}</div>
+                                <div className="text-[11px] text-slate-400">{order.categoryName || 'General'}</div>
+                              </td>
+                              <td className="px-3.5 py-3 font-semibold text-slate-700 dark:text-slate-300">{order.booking?.eventDate || 'N/A'}</td>
+                              <td className="px-3.5 py-3 font-black text-slate-900 dark:text-white">₹{Number(order.grandTotal || order.amount || 0).toLocaleString('en-IN')}</td>
+                              <td className="px-3.5 py-3">
+                                <span className={cn(
+                                  "inline-block rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase border",
+                                  order.paymentStatus === 'paid' ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                                )}>
+                                  {order.paymentStatus || 'pending'}
+                                </span>
+                              </td>
+                              <td className="px-3.5 py-3 font-semibold text-slate-700 dark:text-slate-300">{order.orderStatus || 'Pending'}</td>
+                              <td className="px-3.5 py-3 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="rounded-lg border border-purple-200 dark:border-purple-800 px-2.5 py-1 text-[11px] font-bold text-brand-purple dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 cursor-pointer">Details</button>
+                                  <select value={selectedStatuses[order._id] || order.orderStatus || 'Pending'} onChange={e => setSelectedStatuses(prev => ({ ...prev, [order._id]: e.target.value }))} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 py-1 text-xs font-semibold text-slate-900 dark:text-white outline-none">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Confirmed">Confirmed</option>
+                                    <option value="Team Assigned">Team Assigned</option>
+                                    <option value="Preparation Started">Preparation Started</option>
+                                    <option value="Decoration In Progress">Decoration In Progress</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                  </select>
+                                  <button type="button" onClick={() => void updateOrderStatus(order._id, selectedStatuses[order._id] || order.orderStatus || 'Pending')} className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 text-[11px] font-bold shadow-xs cursor-pointer">Save</button>
+                                  <button type="button" onClick={() => void deleteOrder(order._id)} className="rounded-lg border border-rose-200 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 px-2 py-1 text-[11px] font-bold hover:bg-rose-100 cursor-pointer">Del</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-                  <div className="text-sm text-ink-muted">Showing {orders.length} of {pagination.total} orders</div>
+                    {/* Mobile & Tablet Card View */}
+                    <div className="space-y-3 lg:hidden">
+                      {orders.map((order) => (
+                        <div key={order._id} className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/50 p-4 space-y-3 shadow-2xs">
+                          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-700/60 pb-2">
+                            <span className="text-xs font-black text-slate-900 dark:text-white uppercase">{order.orderNumber || `#${order._id.slice(-8)}`}</span>
+                            <span className={cn(
+                              "text-[10px] font-extrabold px-2 py-0.5 rounded-full border uppercase",
+                              order.paymentStatus === 'paid' ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" : "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+                            )}>
+                              {order.paymentStatus || 'pending'}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div>
+                              <div className="text-[10px] uppercase font-extrabold text-slate-400">Customer</div>
+                              <div className="font-bold text-slate-900 dark:text-white truncate">{order.customer?.name || order.booking?.name || 'N/A'}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase font-extrabold text-slate-400">Amount</div>
+                              <div className="font-black text-slate-900 dark:text-white">₹{Number(order.grandTotal || order.amount || 0).toLocaleString('en-IN')}</div>
+                            </div>
+                            <div>
+                              <div className="text-[10px] uppercase font-extrabold text-slate-400">Product Package</div>
+                              <div className="font-bold text-slate-900 dark:text-white truncate">{order.product?.name || order.productName}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-[10px] uppercase font-extrabold text-slate-400">Event Date</div>
+                              <div className="font-bold text-slate-700 dark:text-slate-300">{order.booking?.eventDate || 'N/A'}</div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200/80 dark:border-slate-700/60 pt-2.5">
+                            <select value={selectedStatuses[order._id] || order.orderStatus || 'Pending'} onChange={e => setSelectedStatuses(prev => ({ ...prev, [order._id]: e.target.value }))} className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-bold text-slate-900 dark:text-white outline-none">
+                              <option value="Pending">Pending</option>
+                              <option value="Confirmed">Confirmed</option>
+                              <option value="Team Assigned">Team Assigned</option>
+                              <option value="Preparation Started">Preparation Started</option>
+                              <option value="Decoration In Progress">Decoration In Progress</option>
+                              <option value="Completed">Completed</option>
+                              <option value="Cancelled">Cancelled</option>
+                            </select>
+
+                            <div className="flex items-center gap-1.5">
+                              <button type="button" onClick={() => void updateOrderStatus(order._id, selectedStatuses[order._id] || order.orderStatus || 'Pending')} className="rounded-lg bg-emerald-600 text-white px-3 py-1.5 text-xs font-bold shadow-2xs">Save</button>
+                              <button type="button" onClick={() => navigate(`/orders/${order._id}`)} className="rounded-lg border border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-brand-purple dark:text-purple-300">View</button>
+                              <button type="button" onClick={() => void deleteOrder(order._id)} className="rounded-lg border border-rose-200 text-rose-600 px-2.5 py-1.5 text-xs font-bold">Del</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Pagination */}
+                <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800 pt-3">
+                  <div className="text-xs font-semibold text-slate-400 dark:text-slate-500">Showing {orders.length} of {pagination.total} orders</div>
                   <div className="flex items-center gap-2">
-                    <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="rounded-lg border border-border px-3 py-2 text-sm text-ink disabled:opacity-50"><ChevronLeft size={16} /></button>
-                    <span className="text-sm text-ink">Page {pagination.page} / {pagination.totalPages}</span>
-                    <button type="button" disabled={page >= pagination.totalPages} onClick={() => setPage(p => p + 1)} className="rounded-lg border border-border px-3 py-2 text-sm text-ink disabled:opacity-50"><ChevronRight size={16} /></button>
+                    <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 cursor-pointer"><ChevronLeft size={16} /></button>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white px-2">Page {pagination.page} / {pagination.totalPages}</span>
+                    <button type="button" disabled={page >= pagination.totalPages} onClick={() => setPage(p => p + 1)} className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 text-xs font-bold text-slate-700 dark:text-slate-200 disabled:opacity-50 cursor-pointer"><ChevronRight size={16} /></button>
                   </div>
                 </div>
               </div>

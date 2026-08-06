@@ -8,8 +8,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 /**
- * Shared text input. Consolidates the various `.form-input`, `.auth-input`,
- * `.admin-input` styles previously duplicated per-component.
+ * Shared text input. Fully theme-aware supporting both Light and Dark modes.
  */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, hint, id, required, ...props }, ref) => {
@@ -21,9 +20,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-ink">
+          <label htmlFor={inputId} className="text-sm font-medium text-slate-900 dark:text-slate-200">
             {label}
-            {required && <span className="text-red-600 ml-0.5">*</span>}
+            {required && <span className="text-red-600 dark:text-red-400 ml-0.5">*</span>}
           </label>
         )}
         <input
@@ -33,21 +32,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={!!error || undefined}
           aria-describedby={cn(hintId, errorId) || undefined}
           className={cn(
-            'h-10 w-full rounded-lg border border-border bg-white px-3 text-sm text-ink placeholder:text-ink-muted',
-            'transition-colors focus:outline-none focus:ring-2 focus:ring-brand-purple-light focus:border-brand-purple-light',
+            'h-10 w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500',
+            'transition-colors focus:outline-none focus:ring-2 focus:ring-brand-purple/40 focus:border-brand-purple',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            error && 'border-red-500 focus:ring-red-400 focus:border-red-500',
+            error && 'border-red-500 dark:border-red-500 focus:ring-red-400 focus:border-red-500',
             className
           )}
           {...props}
         />
         {hint && !error && (
-          <p id={hintId} className="text-xs text-ink-muted">
+          <p id={hintId} className="text-xs text-slate-500 dark:text-slate-400">
             {hint}
           </p>
         )}
         {error && (
-          <p id={errorId} className="text-xs text-red-600" role="alert">
+          <p id={errorId} className="text-xs text-red-600 dark:text-red-400 font-medium" role="alert">
             {error}
           </p>
         )}

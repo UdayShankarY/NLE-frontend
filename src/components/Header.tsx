@@ -1,16 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut, Gift } from 'lucide-react';
+import { ChevronDown, LogIn, Menu, Moon, Sun, User, LogOut, Gift, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { AdminCategory, AuthTab, AuthUser, Translations } from '../types';
 import { AssistantTrigger } from './AssistantPanel';
 import Avatar from './Avatar';
 import { cn } from '../lib/utils';
+import { useTheme } from '../context/ThemeContext';
 
 const LOGO = (
   <img
     src="/final_logo.jpeg"
     alt="TheDecorParty"
-    className="h-9 w-9 object-contain"
+    className="h-9 w-9 object-contain rounded-lg"
   />
 );
 
@@ -25,20 +26,20 @@ const MobCatItem: React.FC<MobCatItemProps> = ({ cat, onSelect }) => {
     (s): s is { name: string; image: string } => typeof s === 'object' && s !== null
   );
   return (
-    <div className="border-b border-border/70 last:border-0">
+    <div className="border-b border-gray-100 dark:border-slate-800 last:border-0">
       <button
-        className="flex w-full items-center justify-between py-3 text-sm font-medium text-ink"
+        className="flex w-full items-center justify-between py-3.5 text-sm font-medium text-gray-800 dark:text-slate-200 transition-colors hover:text-brand-purple dark:hover:text-purple-300"
         onClick={() => (subs.length > 0 ? setOpen(o => !o) : onSelect(cat.name))}
       >
         <span>{cat.name}</span>
         {subs.length > 0 && (
-          <ChevronDown size={14} className={cn('transition-transform', open && 'rotate-180')} />
+          <ChevronDown size={14} className={cn('text-gray-400 dark:text-slate-500 transition-transform duration-200', open && 'rotate-180')} />
         )}
       </button>
       {open && subs.length > 0 && (
-        <div className="flex flex-col gap-1 pb-3 pl-3">
+        <div className="flex flex-col gap-0.5 pb-3 pl-4 animate-fade-in">
           <button
-            className="rounded-md px-2 py-1.5 text-left text-sm text-ink-muted hover:bg-brand-purple/5"
+            className="rounded-lg px-3 py-2 text-left text-sm text-gray-500 dark:text-slate-400 transition-colors hover:bg-brand-purple/10 dark:hover:bg-purple-950/30 hover:text-brand-purple dark:hover:text-purple-300"
             onClick={() => onSelect(cat.name, '__all__')}
           >
             All {cat.name}
@@ -46,7 +47,7 @@ const MobCatItem: React.FC<MobCatItemProps> = ({ cat, onSelect }) => {
           {subs.map((s, i) => (
             <button
               key={i}
-              className="rounded-md px-2 py-1.5 text-left text-sm text-ink-muted hover:bg-brand-purple/5"
+              className="rounded-lg px-3 py-2 text-left text-sm text-gray-500 dark:text-slate-400 transition-colors hover:bg-brand-purple/10 dark:hover:bg-purple-950/30 hover:text-brand-purple dark:hover:text-purple-300"
               onClick={() => onSelect(cat.name, s.name)}
             >
               {s.name}
@@ -79,38 +80,56 @@ export interface HeaderProps {
 }
 
 /**
- * Site header. Previously duplicated verbatim across three branches of App.tsx
- * (home / product detail / booking) as `.nh` markup — now one component
- * driven by props so each page's real differences (mobile menu, assistant
- * button) are explicit instead of copy-pasted.
+ * Site header — sticky with glassmorphism, premium dropdown, smooth mobile drawer.
  */
 export const Header: React.FC<HeaderProps> = ({
   auth,
   t,
   onLogoClick,
   showAssistantButton = false,
-  showMobileMenu = false,
+  showMobileMenu = true,
   onAssistantOpen,
   categories = [],
   onSelectCategory,
 }) => {
+  const { isDark, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [scrolled, setScrolled] = useState(false);
+  const [dropdownXOffset, setDropdownXOffset] = useState(0);
   const accountRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // Scroll-aware shadow
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', darkMode);
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-  }, [darkMode]);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Fix dropdown overflow: measure rendered dropdown and shift right if it bleeds off left edge
+  useEffect(() => {
+    if (!accountOpen || !dropdownRef.current) {
+      setDropdownXOffset(0);
+      return;
+    }
+    // Small delay to allow transition to start
+    const id = requestAnimationFrame(() => {
+      if (!dropdownRef.current) return;
+      const rect = dropdownRef.current.getBoundingClientRect();
+      const overflow = rect.left < 8 ? 8 - rect.left : 0;
+      setDropdownXOffset(overflow);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [accountOpen]);
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (accountRef.current && !accountRef.current.contains(event.target as Node)) setAccountOpen(false);
     };
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setAccountOpen(false);
+      if (event.key === 'Escape') { setAccountOpen(false); setMobileMenuOpen(false); }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     document.addEventListener('keydown', handleEscape);
@@ -120,6 +139,12 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    document.body.style.overflow = mobileMenuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [mobileMenuOpen]);
+
   const isAdmin = auth.user?.role === 'admin';
 
   const userButton = auth.isLoggedIn ? (
@@ -128,139 +153,242 @@ export const Header: React.FC<HeaderProps> = ({
         type="button"
         aria-expanded={accountOpen}
         aria-haspopup="menu"
-        className={cn('flex items-center gap-2 rounded-full border py-1 pl-1 pr-3 transition-colors', darkMode ? 'border-slate-700 bg-slate-900 text-white hover:border-brand-purple-light' : 'border-border bg-white hover:border-brand-purple-light')}
+        className="flex items-center gap-2 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 py-1 pl-1 pr-3 text-gray-900 dark:text-white shadow-sm transition-all duration-200 hover:border-brand-purple-light hover:shadow-md"
         onClick={() => setAccountOpen(open => !open)}
       >
-        <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-8 w-8" />
+        <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-8 w-8 ring-2 ring-brand-purple/20" />
         <span className="hidden flex-col items-start leading-tight sm:flex">
-          <span className={cn('text-xs font-semibold', darkMode ? 'text-white' : 'text-ink')}>Hello, {auth.user?.firstName}</span>
-          <span className={darkMode ? 'text-[11px] text-slate-300' : 'text-[11px] text-ink-muted'}>{t.mob_acc_title}</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-white">Hello, {auth.user?.firstName}</span>
+          <span className="text-[10px] text-gray-500 dark:text-slate-400">{t.mob_acc_title}</span>
         </span>
-        <ChevronDown size={12} className={cn('transition-transform', accountOpen && 'rotate-180', darkMode ? 'text-slate-300' : 'text-ink-muted')} />
+        <ChevronDown size={12} className={cn('transition-transform duration-200 text-gray-400 dark:text-slate-400', accountOpen && 'rotate-180')} />
       </button>
-      <div className={cn('absolute right-0 top-full z-50 mt-2 w-[min(20rem,calc(100vw-2rem))] origin-top-right rounded-xl border p-2 shadow-xl transition-all duration-200', accountOpen ? 'visible translate-y-0 scale-100 opacity-100' : 'invisible -translate-y-1 scale-95 opacity-0', darkMode ? 'border-slate-700 bg-slate-900 text-white' : 'border-border bg-white text-ink')} role="menu">
-        <div className="flex items-center gap-3 border-b border-current/10 px-3 py-3">
-          <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-11 w-11 flex-shrink-0" />
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{[auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(' ')}</div>
-            <div className={cn('truncate text-xs', darkMode ? 'text-slate-300' : 'text-ink-muted')}>{auth.user?.email}</div>
+
+      {/* Dropdown */}
+      <div
+        ref={dropdownRef}
+        className={cn(
+          'absolute right-0 top-[calc(100%+8px)] z-50 w-72 origin-top-right rounded-2xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 text-gray-900 dark:text-white p-2 shadow-glass dark:shadow-purple-950/20 transition-all duration-200 sm:w-80',
+          accountOpen ? 'pointer-events-auto scale-100 opacity-100' : 'pointer-events-none scale-95 opacity-0'
+        )}
+        style={{ transform: `translateX(${dropdownXOffset}px)` }}
+        role="menu"
+      >
+        {/* User card header */}
+        <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-brand-purple/10 to-brand-purple-light/10 p-3">
+          <Avatar user={auth.user} alt={auth.user?.name || auth.user?.email || 'User avatar'} className="h-10 w-10 ring-2 ring-brand-purple/30" />
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-bold text-gray-900 dark:text-white">{auth.user?.name}</div>
+            <div className="truncate text-xs text-gray-500 dark:text-slate-400">{auth.user?.email}</div>
           </div>
         </div>
-        <div className="py-2">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/profile'); }}>
-            <User size={17} /> {t.profile || 'Profile'}
+
+        {/* Menu items */}
+        <div className="mt-2 flex flex-col gap-0.5">
+          <button
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-slate-800"
+            onClick={() => { setAccountOpen(false); navigate('/profile'); }}
+            role="menuitem"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-50 text-brand-purple dark:bg-slate-800 dark:text-purple-300">
+              <User size={16} />
+            </span>
+            <div>
+              <div className="font-semibold text-gray-900 dark:text-white">{t.profile_tab || 'Profile'}</div>
+              <div className="text-[11px] text-gray-500 dark:text-slate-400">View and edit personal details</div>
+            </div>
           </button>
-          {!isAdmin && (
-            <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm hover:bg-brand-purple/10" onClick={() => { setAccountOpen(false); navigate('/wishlist'); }}>
-              <Gift size={17} /> Wishlist
+
+          <button
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-gray-100 dark:hover:bg-slate-800"
+            onClick={() => { setAccountOpen(false); navigate('/wishlist'); }}
+            role="menuitem"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-50 text-brand-purple dark:bg-slate-800 dark:text-purple-300">
+              <Gift size={16} />
+            </span>
+            <div>
+              <div className="font-semibold text-gray-900 dark:text-white">My Wishlist</div>
+              <div className="text-[11px] text-gray-500 dark:text-slate-400">Saved packages &amp; favorites</div>
+            </div>
+          </button>
+
+          {isAdmin && (
+            <button
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors hover:bg-purple-50 dark:hover:bg-purple-950/30"
+              onClick={() => { setAccountOpen(false); navigate('/admin'); }}
+              role="menuitem"
+            >
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-purple text-white">
+                👑
+              </span>
+              <div>
+                <div className="font-semibold text-brand-purple dark:text-purple-300">Admin Portal</div>
+                <div className="text-[11px] text-gray-500 dark:text-slate-400">Manage products &amp; orders</div>
+              </div>
             </button>
           )}
-          <div className="mt-1 border-t border-current/10 px-3 pt-2">
-            <div className="mb-2 flex items-center gap-3 text-sm"><Moon size={17} /> {t.theme_label || 'Theme'}</div>
-            <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/5 p-1 dark:bg-white/10">
-              <button className={cn('flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs', !darkMode && 'bg-white font-semibold shadow-sm')} onClick={() => setDarkMode(false)}><Sun size={14} /> {t.light_mode || 'Light'}</button>
-              <button className={cn('flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-xs', darkMode && 'bg-slate-700 font-semibold')} onClick={() => setDarkMode(true)}><Moon size={14} /> {t.dark_mode || 'Dark'}</button>
-            </div>
-          </div>
         </div>
-        <div className="border-t border-current/10 pt-2">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40" onClick={() => { auth.logout(); setAccountOpen(false); navigate('/'); }}>
-            <LogOut size={17} /> {t.sign_out || 'Sign Out'}
+
+        {/* Sign out */}
+        <div className="mt-2 border-t border-gray-100 pt-1.5 dark:border-slate-800">
+          <button
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-red-500 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30"
+            onClick={() => { auth.logout(); setAccountOpen(false); navigate('/'); }}
+            role="menuitem"
+          >
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-red-50 text-red-500 dark:bg-red-950/50">
+              <LogOut size={16} />
+            </span>
+            {t.sign_out || 'Sign Out'}
           </button>
         </div>
       </div>
     </div>
   ) : (
     <button
-      className="flex items-center gap-2 rounded-full border border-border py-1.5 pl-3 pr-3 hover:border-brand-purple-light"
+      className="flex items-center gap-2 rounded-full border border-gray-200 bg-white dark:bg-slate-800 dark:border-slate-700 py-1.5 pl-3 pr-4 shadow-sm transition-all duration-200 hover:border-brand-purple-light hover:shadow-md"
       onClick={() => auth.open('login')}
     >
-      <LogIn size={18} className="text-ink" />
+      <LogIn size={16} className="text-brand-purple dark:text-purple-300" />
       <span className="hidden flex-col items-start leading-tight sm:flex">
-        <span className="text-xs font-semibold text-ink">Hello, Sign in</span>
-        <span className="text-[11px] text-ink-muted">Account &amp; Orders</span>
+        <span className="text-xs font-semibold text-gray-900 dark:text-white">Hello, Sign in</span>
+        <span className="text-[10px] text-gray-500 dark:text-slate-400">Account &amp; Orders</span>
       </span>
     </button>
   );
 
   return (
-    <header className="border-b border-border bg-white">
-      <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4 md:px-6">
+    <header
+      className={cn(
+        'sticky top-0 z-50 transition-all duration-300',
+        scrolled
+          ? 'glass dark:glass-dark shadow-sm border-b border-white/60 dark:border-slate-800'
+          : 'bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800'
+      )}
+    >
+      <div className="mx-auto flex h-16 max-w-[1920px] items-center gap-3 px-4 md:px-8 lg:px-12">
+        {/* Logo */}
         <a
-          className="flex flex-shrink-0 items-center gap-2 text-lg font-extrabold text-ink md:text-xl"
+          className="flex flex-shrink-0 items-center gap-2.5 text-lg font-extrabold text-gray-900 dark:text-white md:text-xl"
           href="#"
           onClick={e => { e.preventDefault(); onLogoClick(); }}
         >
           {LOGO}
-          <span>
-            TheDecor<em className="not-italic text-brand-purple">Party</em>
+          <span className="tracking-tight">
+            TheDecor<em className="not-italic text-gradient-purple">Party</em>
           </span>
         </a>
 
         <div className="ml-auto flex items-center gap-2 md:gap-3">
           {showAssistantButton && <AssistantTrigger onOpen={onAssistantOpen} />}
+          <button
+            type="button"
+            aria-label="Toggle light/dark theme"
+            title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            onClick={toggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 shadow-sm transition-all hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-90"
+          >
+            {isDark ? <Sun size={17} className="text-amber-400" /> : <Moon size={17} className="text-slate-600" />}
+          </button>
           {userButton}
           {showMobileMenu && (
             <button
-              className="flex h-9 w-9 items-center justify-center rounded-md hover:bg-black/5 md:hidden"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-slate-700 md:hidden"
               onClick={() => setMobileMenuOpen(o => !o)}
               aria-label="Open menu"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
           )}
         </div>
       </div>
 
+      {/* Mobile drawer */}
       {showMobileMenu && (
         <>
-          {mobileMenuOpen && (
-            <div
-              className="fixed inset-0 z-[100] bg-black/40 md:hidden"
-              onClick={() => setMobileMenuOpen(false)}
-            />
-          )}
+          {/* Backdrop */}
           <div
             className={cn(
-              'fixed inset-y-0 right-0 z-[101] w-[82%] max-w-xs overflow-y-auto bg-white p-4 shadow-2xl transition-transform duration-300 md:hidden',
+              'fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm transition-opacity duration-300 md:hidden',
+              mobileMenuOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
+            )}
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          {/* Drawer panel */}
+          <div
+            className={cn(
+              'fixed inset-y-0 right-0 z-[110] flex h-[100dvh] w-[85%] max-w-xs flex-col bg-white dark:bg-slate-900 border-l border-gray-100 dark:border-slate-800 shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.34,1.1,0.64,1)] md:hidden overflow-hidden',
               mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
             )}
           >
-            <div className="flex flex-col">
-              {categories.map(cat => (
-                <MobCatItem
-                  key={cat._id}
-                  cat={cat}
-                  onSelect={(catName, subName) => {
-                    onSelectCategory?.(catName, subName);
-                    setMobileMenuOpen(false);
-                  }}
-                />
-              ))}
+            {/* Drawer header */}
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-100 dark:border-slate-800 px-5 py-4">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">Browse Categories</span>
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 dark:bg-slate-800 text-gray-500 dark:text-slate-400 transition-colors hover:bg-gray-200 dark:hover:bg-slate-700 cursor-pointer"
+                onClick={() => setMobileMenuOpen(false)}
+                aria-label="Close menu"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <div className="my-3 h-px bg-border" />
-            <AssistantTrigger
-              mobile
-              onOpen={() => {
-                onAssistantOpen();
-                setMobileMenuOpen(false);
-              }}
-            />
-            {!auth.isLoggedIn ? (
-              <button
-                className="mt-2 w-full rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark"
-                onClick={() => { auth.open('login'); setMobileMenuOpen(false); }}
-              >
-                Sign in / Register
-              </button>
-            ) : (
-              <button
-                className="mt-2 w-full rounded-lg bg-brand-purple py-3 text-sm font-semibold text-white hover:bg-brand-purple-dark"
-                onClick={() => { auth.logout(); setMobileMenuOpen(false); }}
-              >
-                Sign out
-              </button>
-            )}
+
+            {/* Categories */}
+            <div className="flex-1 overflow-y-auto px-5 py-3">
+              {categories.length === 0 ? (
+                <div className="py-10 text-center text-xs font-bold text-gray-400 dark:text-slate-500">
+                  Loading categories...
+                </div>
+              ) : (
+                categories.map(cat => (
+                  <MobCatItem
+                    key={cat._id}
+                    cat={cat}
+                    onSelect={(catName, subName) => {
+                      onSelectCategory?.(catName, subName);
+                      setMobileMenuOpen(false);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+
+            {/* Drawer footer */}
+            <div className="shrink-0 border-t border-gray-100 dark:border-slate-800 p-4 space-y-2 bg-white dark:bg-slate-900">
+              {auth.isLoggedIn && (
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-brand-purple text-white py-2.5 text-xs font-bold shadow-md transition-all hover:bg-brand-purple-dark active:scale-[0.98] cursor-pointer"
+                  onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}
+                >
+                  <User size={15} /> My Profile &amp; Orders
+                </button>
+              )}
+              <AssistantTrigger
+                mobile
+                onOpen={() => {
+                  onAssistantOpen();
+                  setMobileMenuOpen(false);
+                }}
+              />
+              {!auth.isLoggedIn ? (
+                <button
+                  className="w-full rounded-xl bg-gradient-to-r from-brand-purple to-brand-purple-light py-2.5 text-xs font-bold text-white shadow-md transition-all hover:shadow-lg hover:opacity-90 cursor-pointer"
+                  onClick={() => { auth.open('login'); setMobileMenuOpen(false); }}
+                >
+                  Sign in / Register
+                </button>
+              ) : (
+                <button
+                  className="w-full rounded-xl border border-gray-200 dark:border-slate-700 py-2.5 text-xs font-bold text-red-600 dark:text-red-400 transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer"
+                  onClick={() => { auth.logout(); setMobileMenuOpen(false); }}
+                >
+                  Sign out
+                </button>
+              )}
+            </div>
           </div>
         </>
       )}

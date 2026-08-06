@@ -25,10 +25,10 @@ export const TermsPage: React.FC<TermsPageProps> = ({ pageKey, onClose }) => {
       className="fixed inset-0 z-[900] flex items-center justify-center bg-black/50 p-4 sm:items-center"
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:self-auto">
+      <div className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-transparent dark:border-slate-800 sm:self-auto">
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2 className="text-lg font-bold text-ink">{title}</h2>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-black/5" onClick={onClose} aria-label="Close">
+          <button className="flex h-8 w-8 items-center justify-center rounded-full text-ink-muted hover:bg-black/5 dark:hover:bg-white/10" onClick={onClose} aria-label="Close">
             <X size={18} />
           </button>
         </div>

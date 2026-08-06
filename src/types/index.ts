@@ -130,6 +130,7 @@ export interface Translations {
   ask_assistant?: string;
   ai_assistant?: string;
   language_preferences?: string;
+  profile_tab?: string;
 }
 
 export type TranslationsMap = Record<string, Translations>;

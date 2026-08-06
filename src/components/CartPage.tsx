@@ -68,7 +68,7 @@ export const CartPage: React.FC<CartPageProps> = ({
   return (
     <div className="fixed inset-0 z-[500] bg-black/45" onClick={onClose}>
       <div
-        className="fixed inset-y-0 right-0 flex w-full max-w-md flex-col bg-white shadow-2xl"
+        className="fixed inset-y-0 right-0 flex w-full max-w-md flex-col bg-white dark:bg-slate-900 border-l border-transparent dark:border-slate-800 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -81,7 +81,7 @@ export const CartPage: React.FC<CartPageProps> = ({
               </span>
             )}
           </div>
-          <button className="rounded-md p-1.5 text-ink-muted hover:bg-black/5" onClick={onClose} aria-label="Close cart">
+          <button className="rounded-md p-1.5 text-ink-muted hover:bg-black/5 dark:hover:bg-white/10" onClick={onClose} aria-label="Close cart">
             <X size={20} />
           </button>
         </div>

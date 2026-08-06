@@ -396,28 +396,32 @@ export const SlidersView = () => {
   };
 
   return (
-    <div className="adm-section">
-      <div className="adm-section-header">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
         <div>
-          <h2 className="adm-section-title">Hero Sliders</h2>
-          <p className="adm-section-sub">Manage homepage banner slides &middot; Drag to reorder</p>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Hero Sliders &amp; Banners</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Manage homepage banner slides. Drag and drop slides to reorder.</p>
         </div>
-        <button className="adm-btn-primary" onClick={openAdd}>
+        <button 
+          type="button" 
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer" 
+          onClick={openAdd}
+        >
           + Add Slider
         </button>
       </div>
 
-      <div className="mb-5 flex items-start gap-2 rounded-lg bg-brand-purple/5 px-3.5 py-2.5 text-sm text-ink-muted">
-        <Lightbulb size={15} className="mt-0.5 flex-shrink-0 text-brand-purple" />
-        <span><strong className="text-ink">Tip:</strong> Drag and drop slides to reorder them. The order will be saved automatically.</span>
+      <div className="flex items-start gap-2.5 rounded-2xl bg-purple-50 dark:bg-purple-950/40 p-4 text-xs font-semibold text-slate-600 dark:text-slate-300 border border-purple-100 dark:border-purple-900/50">
+        <Lightbulb size={16} className="mt-0.5 shrink-0 text-brand-purple dark:text-purple-400" />
+        <span><strong className="font-extrabold text-slate-900 dark:text-white">Pro Tip:</strong> Drag and drop slides to reorder their display order on the homepage banner.</span>
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="space-y-3">
         {sliders.map((slide, idx) => (
           <div
             key={slide._id}
             className={cn(
-              'flex items-center gap-3 rounded-card border border-border bg-white p-3 transition-opacity',
+              'flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-xs transition-all',
               !slide.active && 'opacity-60',
               draggedIndex === idx && 'opacity-40'
             )}
@@ -426,26 +430,38 @@ export const SlidersView = () => {
             onDragOver={(e) => handleDragOver(e, idx)}
             onDragEnd={handleDragEnd}
           >
-            <span className="flex-shrink-0 cursor-grab text-ink-muted"><GripVertical size={18} /></span>
-            <span className="flex-shrink-0 text-xs font-bold text-ink-muted">#{idx + 1}</span>
-            <img src={slide.image} alt={slide.headline} className="h-14 w-24 flex-shrink-0 rounded-lg object-cover" />
-            <div className="min-w-0 flex-1">
-              {slide.chip && <div className="mb-0.5 inline-block rounded-full bg-brand-purple/10 px-2 py-0.5 text-[10px] font-bold text-brand-purple">{slide.chip}</div>}
-              <div className="truncate text-sm font-semibold text-ink">{slide.headline}</div>
-              {slide.subtext && <div className="truncate text-xs text-ink-muted">{slide.subtext}</div>}
-              <div className="mt-0.5 text-xs text-ink-muted">
-                CTA: <em className="not-italic font-medium">{slide.ctaText}</em> &rarr; <code className="text-[11px]">{slide.ctaLink}</code>
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <span className="shrink-0 cursor-grab text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"><GripVertical size={18} /></span>
+              <span className="shrink-0 text-xs font-black text-slate-400 dark:text-slate-500">#{idx + 1}</span>
+              <img src={slide.image} alt={slide.headline} className="h-14 w-24 shrink-0 rounded-xl object-cover border border-slate-200 dark:border-slate-800" />
+              <div className="min-w-0 flex-1">
+                {slide.chip && <div className="mb-0.5 inline-block rounded-full bg-purple-100 dark:bg-purple-950/80 px-2 py-0.5 text-[10px] font-extrabold text-brand-purple dark:text-purple-300">{slide.chip}</div>}
+                <div className="truncate text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">{slide.headline}</div>
+                {slide.subtext && <div className="truncate text-xs font-medium text-slate-500 dark:text-slate-400">{slide.subtext}</div>}
+                <div className="mt-0.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 truncate">
+                  CTA: <em className="not-italic font-bold text-slate-700 dark:text-slate-300">{slide.ctaText}</em> &rarr; <code className="text-[10px] font-mono">{slide.ctaLink}</code>
+                </div>
               </div>
             </div>
-            <div className="flex flex-shrink-0 gap-1.5">
-              <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => openEdit(slide)}>
+
+            <div className="flex items-center gap-1.5 self-end sm:self-center shrink-0">
+              <button 
+                type="button" 
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" 
+                onClick={() => openEdit(slide)}
+              >
                 <Pencil size={12} /> Edit
               </button>
-              <button className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink hover:bg-black/5" onClick={() => toggle(slide._id, !slide.active)}>
+              <button 
+                type="button" 
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer" 
+                onClick={() => toggle(slide._id, !slide.active)}
+              >
                 {slide.active ? <EyeOff size={12} /> : <Eye size={12} />} {slide.active ? "Hide" : "Show"}
               </button>
               <button
-                className="flex items-center gap-1 rounded-md border border-red-200 px-2.5 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                type="button"
+                className="inline-flex items-center gap-1 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 px-2.5 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 cursor-pointer"
                 onClick={() => setDeleteConfirm({ id: slide._id, headline: slide.headline })}
               >
                 <Trash2 size={12} /> Delete

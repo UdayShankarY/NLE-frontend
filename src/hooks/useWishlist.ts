@@ -113,17 +113,38 @@ export function useWishlist() {
   const wishlistIds = useMemo(() => new Set(items.map((product) => product._id)), [items]);
 
   const toggleWishlist = useCallback(
-    async (product: AdminProduct, wished: boolean) => {
+    async (product: AdminProduct, targetState?: boolean) => {
       if (!auth.isLoggedIn || !auth.user) {
         auth.open('login');
         return false;
       }
 
+      const currentWished = wishlistIds.has(product._id) || (Array.isArray(auth.user?.wishlist) && auth.user.wishlist.some(id => String(id) === String(product._id)));
+      const shouldAdd = targetState !== undefined ? targetState : !currentWished;
+
+      // 1. Optimistic local state update (0ms latency)
+      setItems((prevItems) => {
+        if (shouldAdd) {
+          if (prevItems.some((item) => String(item._id) === String(product._id))) return prevItems;
+          return [...prevItems, product];
+        } else {
+          return prevItems.filter((item) => String(item._id) !== String(product._id));
+        }
+      });
+
+      const currentWishlist = Array.isArray(auth.user.wishlist) ? auth.user.wishlist.map(String) : [];
+      const nextWishlist = shouldAdd
+        ? (currentWishlist.includes(String(product._id)) ? currentWishlist : [...currentWishlist, String(product._id)])
+        : currentWishlist.filter((id) => id !== String(product._id));
+
+      auth.updateUser({ wishlist: nextWishlist });
+
+      // 2. Background API Call
       try {
         const token = localStorage.getItem('token');
         const url = getApiUrl(`/api/wishlist/${product._id}`);
         const response = await fetch(url, {
-          method: wished ? 'POST' : 'DELETE',
+          method: shouldAdd ? 'POST' : 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
         const payload = (await response.json().catch(() => null)) as WishlistResponse | null;
@@ -137,11 +158,20 @@ export function useWishlist() {
         });
         return true;
       } catch (err) {
-        console.error(err);
+        console.error('Wishlist toggle error, reverting:', err);
+        setItems((prevItems) => {
+          if (!shouldAdd) {
+            if (prevItems.some((item) => String(item._id) === String(product._id))) return prevItems;
+            return [...prevItems, product];
+          } else {
+            return prevItems.filter((item) => String(item._id) !== String(product._id));
+          }
+        });
+        auth.updateUser({ wishlist: currentWishlist });
         return false;
       }
     },
-    [auth]
+    [auth, wishlistIds]
   );
 
   const isWished = useCallback((productId: string) => wishlistIds.has(productId), [wishlistIds]);

@@ -120,86 +120,96 @@ export const ActivitiesView = () => {
 
   const filteredActivities = activities.filter((activity) => {
     if (!search.trim()) return true;
-    return activity.product.name.toLowerCase().includes(search.trim().toLowerCase());
+    return activity.product?.name?.toLowerCase().includes(search.trim().toLowerCase());
   });
 
   return (
-    <div className="adm-section">
-      <div className="adm-section-header">
-        <h2 className="adm-section-title">Activities</h2>
-        <button className="adm-btn-primary" onClick={openAdd}>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+        <div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white">Activity Add-ons</h2>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Manage party entertainment &amp; game activities available for customer bookings.</p>
+        </div>
+        <button 
+          type="button" 
+          onClick={openAdd}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-purple hover:bg-brand-purple-dark text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 active:scale-95 transition-all cursor-pointer"
+        >
           <Plus size={16} /> Add Activity
         </button>
       </div>
 
-      <div className="mb-4 grid gap-3 md:grid-cols-[1fr,180px]">
-        <div className="relative">
-          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="relative w-full sm:max-w-md">
+          <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
-            className="adm-input pl-9"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 pl-10 pr-4 py-2.5 text-xs font-semibold text-slate-900 dark:text-white outline-none placeholder:text-slate-400"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search selected product names"
+            placeholder="Search activity product names..."
           />
         </div>
-        <div className="text-sm text-ink-muted flex items-center justify-end">{filteredActivities.length} activities</div>
+        <div className="text-xs font-bold text-slate-400 dark:text-slate-500 self-end sm:self-center">
+          {filteredActivities.length} activities
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredActivities.map((activity) => (
-          <div key={activity._id} className="overflow-hidden rounded-card border border-border bg-white shadow-card">
-            <div className="relative h-40 w-full bg-gray-100">
-              {activity.product?.image ? (
-                <img src={activity.product.image} alt={activity.product.name} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-ink-muted">No image</div>
-              )}
+          <div key={activity._id} className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                {activity.product?.image ? (
+                  <img src={activity.product.image} alt={activity.product.name} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-xs font-semibold text-slate-400">No Image</div>
+                )}
+                <span className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border ${
+                  activity.active ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                }`}>
+                  {activity.active ? 'Active' : 'Hidden'}
+                </span>
+              </div>
+              <div className="p-4 space-y-2">
+                <div className="font-bold text-sm text-slate-900 dark:text-white line-clamp-1">{activity.product?.name || 'Unnamed Product'}</div>
+                <div className="text-xs font-black text-brand-purple dark:text-purple-400">₹{Number(activity.product?.price || 0).toLocaleString('en-IN')}</div>
+              </div>
             </div>
-            <div className="p-4">
-              <div className="mt-3 rounded-lg border border-border bg-gray-50 px-3 py-2 text-sm text-ink">
-                <div className="flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-semibold">{activity.product.name}</div>
-                    {(activity.product.categoryName || activity.product.subcategory) && (
-                      <div className="truncate text-xs text-ink-muted">
-                        {activity.product.categoryName}
-                        {activity.product.subcategory ? ` · ${activity.product.subcategory}` : ''}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold text-brand-purple">₹{activity.product.price.toLocaleString()}</div>
-                </div>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <button
-                  className="adm-btn-ghost"
-                  onClick={() => toggleVisibility(activity)}
-                >
-                  {activity.active ? <EyeOff size={14} /> : <Eye size={14} />} 
-                  {activity.active ? 'Hide' : 'Show'}
-                </button>
-                <button className="adm-btn-danger" onClick={() => setDeleteConfirm(activity)}>
-                  <Trash2 size={14} /> Delete
-                </button>
-              </div>
+
+            <div className="p-4 pt-0 flex items-center gap-2">
+              <button
+                type="button"
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                onClick={() => toggleVisibility(activity)}
+              >
+                {activity.active ? <EyeOff size={14} /> : <Eye size={14} />} 
+                {activity.active ? 'Hide' : 'Show'}
+              </button>
+              <button 
+                type="button"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer" 
+                onClick={() => setDeleteConfirm(activity)}
+              >
+                <Trash2 size={14} /> Delete
+              </button>
             </div>
           </div>
         ))}
       </div>
 
       {showModal && (
-        <Modal title="Add Activity" onClose={() => setShowModal(false)} large>
-          <div className="adm-form">
-            <label>Select Products *</label>
+        <Modal title="Add Activity Product" onClose={() => setShowModal(false)} large>
+          <div className="space-y-4">
+            <label className="text-xs font-extrabold uppercase text-slate-400">Select Activity Products *</label>
             <ProductSearchSelector
               products={products}
               selectedProductIds={selectedProductIds}
               excludedProductIds={excludedProductIds}
               onChange={setSelectedProductIds}
             />
-            <div className="adm-modal-footer">
-              <button className="adm-btn-ghost" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="adm-btn-primary" onClick={save}>Save Activity</button>
+            <div className="flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-800 pt-4">
+              <button type="button" className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="button" className="rounded-xl bg-brand-purple text-white px-4 py-2.5 text-xs font-bold shadow-md shadow-purple-600/20 cursor-pointer" onClick={save}>Save Activity</button>
             </div>
           </div>
         </Modal>
@@ -208,7 +218,7 @@ export const ActivitiesView = () => {
       {deleteConfirm && (
         <ConfirmModal
           title="Delete Activity"
-          message={`Are you sure you want to delete this activity?`}
+          message={`Are you sure you want to delete "${deleteConfirm.product?.name}" from activities?`}
           onConfirm={() => remove(deleteConfirm)}
           onCancel={() => setDeleteConfirm(null)}
           confirmText="Delete"

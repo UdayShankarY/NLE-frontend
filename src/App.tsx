@@ -162,10 +162,18 @@ export default function App() {
 
   const pageContent = (() => {
     const showHome = !activeCategory && !activeSubcategory && !search;
+    const isCategorySubcategoryListing = activeCategory && !activeSubcategory;
 
     return (
-      <>
-        <SearchBar value={search} onChange={handleSearchChange} placeholder={t.search_placeholder} />
+      <div className="pb-12 md:pb-20">
+        {!isCategorySubcategoryListing && (
+          <SearchBar
+            value={search}
+            onChange={handleSearchChange}
+            category={activeCategory}
+            subcategory={activeSubcategory}
+          />
+        )}
 
         {showHome && <HeroSlider />}
 
@@ -188,7 +196,7 @@ export default function App() {
           />
         ))}
 
-        {activeCategory && !activeSubcategory && !search && (() => {
+        {isCategorySubcategoryListing && (() => {
           const activeCat = categories.find(c => c.name === activeCategory);
           const subs = activeCat?.subcategories?.filter(
             (s): s is { name: string; image: string } => typeof s === 'object' && s !== null
@@ -207,29 +215,83 @@ export default function App() {
 
         {(activeSubcategory || search) && !showHome && (
           loading ? (
-            <LoadingState label="Loading packages..." />
+            <div style={{ animation: 'fadeIn 0.3s ease both' }}>
+              <LoadingState label="Loading packages..." />
+            </div>
           ) : Object.keys(filteredGrouped).length === 0 ? (
-            <EmptyState
-              title="No packages found"
-              description={search ? `No results for "${search}"` : 'No packages in this category yet.'}
-              actionLabel="Clear filters"
-              onAction={() => navigate('/')}
-            />
+            <div style={{ animation: 'fadeInUp 0.4s ease both' }}>
+              <EmptyState
+                title="No packages found"
+                description={search ? `No results for "${search}"` : 'No packages in this category yet.'}
+                actionLabel="Clear filters"
+                onAction={() => navigate('/')}
+              />
+            </div>
           ) : (
             <>
               {activeSubcategory && activeSubcategory !== '__all__' && (
-                <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-2 px-4 pt-4 text-sm text-ink-muted md:px-6">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button className="font-medium text-ink hover:text-brand-purple" onClick={() => navigate(buildCatalogPath(activeCategory, null, search))}>&larr; {activeCategory}</button>
-                    <span>/ {activeSubcategory}</span>
+                <div className="mx-auto max-w-[1920px] px-3.5 pt-3 pb-1 sm:px-6 md:px-8 lg:px-12 sm:pt-6 animate-fadeIn">
+                  {/* 1. Breadcrumb Navigation */}
+                  <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
+                    <button
+                      type="button"
+                      className="font-medium hover:text-brand-purple dark:hover:text-purple-300 transition-colors"
+                      onClick={() => navigate('/')}
+                    >
+                      Home
+                    </button>
+                    <span className="text-gray-300 dark:text-slate-600">/</span>
+                    <button
+                      type="button"
+                      className="font-medium hover:text-brand-purple dark:hover:text-purple-300 transition-colors"
+                      onClick={() => navigate(buildCatalogPath(activeCategory, null, ''))}
+                    >
+                      {activeCategory}
+                    </button>
+                    <span className="text-gray-300 dark:text-slate-600">/</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{activeSubcategory}</span>
                   </div>
-                  <button
-                    type="button"
-                    onClick={openSubcategoryShare}
-                    className="inline-flex items-center gap-2 rounded-full border border-border bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-gray-50"
-                  >
-                    <Share2 size={14} /> Share
-                  </button>
+
+                  {/* 2. Main Header Row (Title + Share Button on the right) */}
+                  <div className="flex items-center justify-between gap-3">
+                    <h1 className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-3xl lg:text-4xl">
+                      {activeSubcategory}
+                    </h1>
+
+                    <button
+                      type="button"
+                      onClick={openSubcategoryShare}
+                      className="inline-flex h-9 min-w-max items-center justify-center gap-1.5 rounded-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 text-xs font-semibold text-gray-700 dark:text-slate-200 shadow-xs transition-all duration-200 hover:border-brand-purple/40 hover:bg-brand-purple hover:text-white active:scale-95 flex-shrink-0"
+                      aria-label="Share collection"
+                    >
+                      <Share2 size={14} />
+                      <span>Share</span>
+                    </button>
+                  </div>
+
+                  {/* 3. Subtitle */}
+                  <p className="mt-1 max-w-xl text-xs sm:text-sm font-normal text-gray-500 dark:text-slate-400 leading-relaxed">
+                    Verified event setups and packages for your celebration in Bengaluru.
+                  </p>
+
+                  {/* 4. Metadata Row */}
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-50 dark:bg-purple-950/40 px-2.5 py-0.5 text-[11px] font-bold text-brand-purple dark:text-purple-300 border border-brand-purple/10 dark:border-purple-800/30">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-purple dark:bg-purple-400" />
+                      {activeCategory}
+                    </span>
+                    {(() => {
+                      const count = Object.values(filteredGrouped).reduce((acc, list) => acc + list.length, 0);
+                      return count > 0 ? (
+                        <span className="rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 text-[11px] font-medium text-gray-600 dark:text-slate-300">
+                          {count} {count === 1 ? 'Package' : 'Packages'}
+                        </span>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  {/* 5. Divider */}
+                  <div className="mt-3 mb-1 border-b border-gray-100 dark:border-slate-800" />
                 </div>
               )}
               {Object.entries(filteredGrouped).map(([categoryName, products]) => (
@@ -245,9 +307,7 @@ export default function App() {
             </>
           )
         )}
-
-      
-      </>
+      </div>
     );
   })();
 
