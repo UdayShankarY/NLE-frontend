@@ -467,8 +467,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
             const createdOrder = verifyBody?.order || verifyBody;
             const orderId = createdOrder?._id || createdOrder?.id || createdOrder?.orderId;
             
+            toast.success("Payment successful! Your booking is confirmed.");
+
             if (orderId && typeof orderId === 'string' && orderId.length > 5) {
               navigate(`/orders/${orderId}`, { replace: true });
+            } else if (product?._id) {
+              navigate(`/product/${product._id}`, { replace: true });
             } else {
               navigate('/profile', { replace: true });
             }
