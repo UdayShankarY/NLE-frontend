@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { ShieldCheck, Lock, Zap, Calendar, Clock, MapPin, User, Sparkles, X, CreditCard, ChevronRight } from 'lucide-react';
 import { BackButton } from './BackButton';
 import type { AdminProduct, BookingAddonSnapshot, BookingDetails } from '../types';
