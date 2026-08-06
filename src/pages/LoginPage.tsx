@@ -8,6 +8,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { useAI } from '../context/AIContext';
 import { getApiUrl } from '../lib/api';
+import { trackLogin } from '../lib/analytics';
 import { auth as firebaseAuth } from '../firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
@@ -71,6 +72,7 @@ export default function LoginPage() {
       }
 
       auth.login(data.user, data.token);
+      trackLogin('email', data.user.id || data.user._id);
       navigate(data.user.role === 'admin' ? '/admin' : '/profile');
     } catch (err: any) {
       setErrors({ general: err.message || 'Unable to sign in. Please try again.' });
@@ -97,6 +99,7 @@ export default function LoginPage() {
       if (!response.ok) throw new Error(data.message || 'Google sign in failed');
 
       auth.login(data.user, data.token);
+      trackLogin('google', data.user.id || data.user._id);
       navigate(data.user.role === 'admin' ? '/admin' : '/profile');
     } catch (err: any) {
       setErrors({ general: err.message || 'Google authentication failed' });

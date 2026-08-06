@@ -3,10 +3,11 @@ import type { AdminCategory } from "../../types";
 import { Modal } from "./Modal";
 import { ConfirmModal } from "./ConfirmModal";
 import { toast } from "react-toastify";
-import { Pencil, Eye, EyeOff, Trash2, Layers, Plus, Upload, Link as LinkIcon, X, Copy } from "lucide-react";
+import { Pencil, Eye, EyeOff, Trash2, Layers, Plus, Upload, Link as LinkIcon, X, Copy, ArrowUp, ArrowDown } from "lucide-react";
 import { EmptyState } from "../EmptyState";
 import { cn } from "../../lib/utils";
 import { getApiUrl } from '../../lib/api';
+import { trackAdminAction } from '../../lib/analytics';
 
 const API = getApiUrl('/api/categories');
 
@@ -43,6 +44,36 @@ export const CategoriesView = () => {
       toast.success('Copied link');
     } catch {
       toast.error('Failed to copy link');
+    }
+  };
+
+  const moveCategory = async (index: number, direction: 'up' | 'down') => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= cats.length) return;
+
+    const newCats = [...cats];
+    const temp = newCats[index];
+    newCats[index] = newCats[targetIndex];
+    newCats[targetIndex] = temp;
+
+    setCats(newCats);
+
+    try {
+      const orderedIds = newCats.map((c) => c._id);
+      const res = await fetch(`${API}/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderedIds }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to reorder");
+      }
+      trackAdminAction('reorder_categories', 'category');
+      toast.success("Category position updated!");
+    } catch {
+      toast.error("Failed to update category order");
+      fetchCategories();
     }
   };
 
@@ -271,6 +302,7 @@ export const CategoriesView = () => {
         });
         const updated = await res.json();
         setCats((prev) => prev.map((cat) => (cat._id === updated._id ? updated : cat)));
+        trackAdminAction('update_category', 'category', updated._id);
         toast.success("Category updated successfully!");
       } catch {
         toast.error("Failed to update category");
@@ -283,6 +315,7 @@ export const CategoriesView = () => {
       });
       const newCategory = await res.json();
       setCats((prev) => [...prev, newCategory]);
+      trackAdminAction('create_category', 'category', newCategory._id);
       toast.success("Category added successfully!");
     }
 
@@ -293,6 +326,7 @@ export const CategoriesView = () => {
     await fetch(`${API}/${id}`, { method: "DELETE" });
     setCats((prev) => prev.filter((cat) => cat._id !== id));
     setDeleteConfirm(null);
+    trackAdminAction('delete_category', 'category', id);
     toast.success("Category deleted!");
   };
 
@@ -333,21 +367,24 @@ export const CategoriesView = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {cats.map((cat) => (
+        {cats.map((cat, idx) => (
           <div key={cat._id} className={cn('overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs flex flex-col justify-between transition-all', !cat.active && 'opacity-60')}>
             <div>
-              {cat.image ? (
-                <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+              <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                {cat.image ? (
                   <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
-                  <span className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border ${
-                    cat.active ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
-                  }`}>
-                    {cat.active ? 'Active' : 'Hidden'}
-                  </span>
-                </div>
-              ) : (
-                <div className="h-28 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-400">No Image</div>
-              )}
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center text-xs font-semibold text-slate-400">No Image</div>
+                )}
+                <span className="absolute top-2.5 left-2.5 rounded-full bg-slate-900/80 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-extrabold text-white border border-white/20">
+                  #{idx + 1}
+                </span>
+                <span className={`absolute top-2.5 right-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border ${
+                  cat.active ? 'bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
+                }`}>
+                  {cat.active ? 'Active' : 'Hidden'}
+                </span>
+              </div>
               <div className="p-4 space-y-1">
                 <div className="text-sm font-bold text-slate-900 dark:text-white">{cat.name}</div>
                 <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">{cat.productCount || 0} products &middot; /{cat.slug}</div>
@@ -369,6 +406,26 @@ export const CategoriesView = () => {
                 >
                   <Trash2 size={12} />
                 </button>
+                <div className="ml-auto flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={idx === 0}
+                    onClick={() => moveCategory(idx, 'up')}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                    title="Move Up"
+                  >
+                    <ArrowUp size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={idx === cats.length - 1}
+                    onClick={() => moveCategory(idx, 'down')}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-30 cursor-pointer"
+                    title="Move Down"
+                  >
+                    <ArrowDown size={13} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-1.5 border-t border-slate-100 dark:border-slate-800 pt-2.5">
@@ -516,17 +573,17 @@ export const CategoriesView = () => {
                   const subImg = typeof sub === 'string' ? '' : sub.image;
 
                   return (
-                    <div key={idx} className="flex items-center gap-2.5 rounded-lg border border-border p-2">
-                      <span className="w-5 flex-shrink-0 text-xs text-ink-muted">{idx + 1}.</span>
+                    <div key={idx} className="flex items-center gap-2.5 rounded-lg border border-slate-200 dark:border-slate-800 p-2">
+                      <span className="w-5 flex-shrink-0 text-xs text-slate-400 dark:text-slate-500">{idx + 1}.</span>
                       {subImg && (
-                        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-gray-100">
+                        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-md bg-slate-100 dark:bg-slate-800">
                           <img src={subImg} alt={subName} className="h-full w-full object-cover" />
                         </div>
                       )}
-                      <span className="flex-1 truncate text-sm font-medium text-ink">{subName}</span>
+                      <span className="flex-1 truncate text-sm font-medium text-slate-900 dark:text-white">{subName}</span>
                       <div className="flex flex-shrink-0 gap-1.5">
                         <button
-                          className="flex h-7 w-7 items-center justify-center rounded-md border border-border text-ink hover:bg-black/5"
+                          className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                           onClick={() => {
                             setEditSubModal({ idx, name: subName });
                             setEditSubName(subName);
@@ -536,7 +593,7 @@ export const CategoriesView = () => {
                           <Pencil size={12} />
                         </button>
                         <button
-                          className="flex h-7 w-7 items-center justify-center rounded-md border border-red-200 text-red-600 hover:bg-red-50"
+                          className="flex h-7 w-7 items-center justify-center rounded-md border border-rose-200 dark:border-rose-900/50 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer"
                           onClick={() => setDeleteSubConfirm({ idx, name: subName })}
                         >
                           <Trash2 size={12} />
@@ -568,15 +625,15 @@ export const CategoriesView = () => {
           }}
         >
           <div className="adm-form">
-            <div className="mb-2 flex items-center gap-2 rounded-lg bg-gray-50 p-2.5">
-              <span className="text-xs font-medium text-ink-muted">Adding to:</span>
+            <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Adding to:</span>
               <div className="flex items-center gap-1.5">
                 {selectedCategory.image ? (
                   <img src={selectedCategory.image} alt={selectedCategory.name} className="h-6 w-6 rounded-md object-cover" />
                 ) : (
                   <span>{selectedCategory.icon}</span>
                 )}
-                <span className="text-sm font-semibold text-ink">{selectedCategory.name}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">{selectedCategory.name}</span>
               </div>
             </div>
 
@@ -679,15 +736,15 @@ export const CategoriesView = () => {
           }}
         >
           <div className="adm-form">
-            <div className="mb-2 flex items-center gap-2 rounded-lg bg-gray-50 p-2.5">
-              <span className="text-xs font-medium text-ink-muted">Category:</span>
+            <div className="mb-2 flex items-center gap-2 rounded-lg bg-slate-50 dark:bg-slate-800/60 p-2.5 border border-slate-200 dark:border-slate-700">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Category:</span>
               <div className="flex items-center gap-1.5">
                 {selectedCategory.image ? (
                   <img src={selectedCategory.image} alt={selectedCategory.name} className="h-6 w-6 rounded-md object-cover" />
                 ) : (
                   <span>{selectedCategory.icon}</span>
                 )}
-                <span className="text-sm font-semibold text-ink">{selectedCategory.name}</span>
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">{selectedCategory.name}</span>
               </div>
             </div>
 

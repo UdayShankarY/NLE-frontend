@@ -6,7 +6,7 @@ import type { AdminProduct, BookingAddonSnapshot, BookingDetails } from '../type
 import { Input } from './ui/Input';
 import { Button } from './ui/Button';
 import { getApiUrl } from '../lib/api';
-import { trackBeginCheckout, trackPaymentFailed, trackPurchase } from '../lib/analytics';
+import { trackBeginCheckout, trackAddPaymentInfo, trackPaymentFailed, trackPurchase, trackWhatsappClick, type GAItem } from '../lib/analytics';
 import AuthContext from "../context/AuthContext";
 import { cn } from '../lib/utils';
 
@@ -229,6 +229,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
   };
 
   const openWhatsApp = async () => {
+    trackWhatsappClick('checkout_page', product._id, product.name);
     const selectedSummary = form.addOns.length > 0
       ? ['*Selected Add-ons / Activities:*', ...form.addOns.map(addon => `- ${addon.name} (+Rs.${addon.price.toLocaleString()})`)]
       : [];
@@ -272,7 +273,25 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
       return;
     }
     
-    trackBeginCheckout(product._id, product.name, product.price);
+    const checkoutItems: GAItem[] = [
+      {
+        item_id: product._id,
+        item_name: product.name,
+        item_category: product.categoryName,
+        item_subcategory: product.subcategory,
+        price: product.price,
+        quantity: 1,
+      },
+      ...form.addOns.map((addon) => ({
+        item_id: `addon-${addon.name.toLowerCase().replace(/\s+/g, '_')}`,
+        item_name: addon.name,
+        price: addon.price,
+        quantity: 1,
+      })),
+    ];
+
+    trackBeginCheckout(checkoutItems, totalPrice);
+    trackAddPaymentInfo('razorpay', checkoutItems, totalPrice);
     setLoading(true);
     setError('');
     setPaymentDialog(null);
@@ -427,7 +446,23 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
             }
 
             onConfirm(product, bookingPayload, 'razorpay');
-            trackPurchase(`booking-${product._id}-${Date.now()}`, totalPrice);
+            const purchasedItems: GAItem[] = [
+              {
+                item_id: product._id,
+                item_name: product.name,
+                item_category: product.categoryName,
+                item_subcategory: product.subcategory,
+                price: product.price,
+                quantity: 1,
+              },
+              ...form.addOns.map((addon) => ({
+                item_id: `addon-${addon.name.toLowerCase().replace(/\s+/g, '_')}`,
+                item_name: addon.name,
+                price: addon.price,
+                quantity: 1,
+              })),
+            ];
+            trackPurchase(paymentResponse.razorpay_payment_id || `order-${Date.now()}`, totalPrice, purchasedItems);
 
             const createdOrder = verifyBody?.order || verifyBody;
             const orderId = createdOrder?._id || createdOrder?.id || createdOrder?.orderId;
@@ -438,7 +473,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
               navigate('/profile', { replace: true });
             }
           } catch (err: any) {
-            trackPaymentFailed();
+            trackPaymentFailed(err?.message || 'Payment verification failed', product._id, totalPrice);
             console.error('Failed to save paid booking:', err);
             setError(err?.message || 'Payment verification failed.');
             setLoading(false);
@@ -448,8 +483,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({ product, preferredMeth
 
       const rz = new (window as any).Razorpay(options);
       rz.on('payment.failed', async (response: any) => {
-        trackPaymentFailed();
         const reason = response?.error?.description || response?.error?.reason || 'Your payment could not be completed.';
+        trackPaymentFailed(reason, product._id, totalPrice);
         await savePaymentOutcome('failed', undefined, {
           kind: 'failed',
           title: 'Payment Failed',

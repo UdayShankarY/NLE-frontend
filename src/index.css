@@ -610,6 +610,8 @@ html.dark select:-webkit-autofill:focus {
 .adm-form { display: flex; flex-direction: column; gap: 14px; }
 .adm-form label { font-size: 0.78rem; font-weight: 600; color: #374151; }
 .adm-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+.adm-form-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.adm-form-col { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 6px; }
 .adm-form-full { grid-column: 1 / -1; }
 .adm-input {
   width: 100%;
@@ -661,6 +663,10 @@ html.dark select:-webkit-autofill:focus {
 .adm-file-icon { font-size: 2rem; margin-bottom: 8px; }
 .adm-file-text { font-size: 0.88rem; font-weight: 600; color: #1E293B; margin-bottom: 4px; }
 .adm-file-hint { font-size: 0.72rem; color: #94A3B8; }
+.adm-btn-add { background: #EFF6FF; color: #2563EB; border: 1px solid #DBEAFE; padding: 9px 14px; border-radius: 9px; font-size: 0.84rem; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; white-space: nowrap; transition: all 0.2s; }
+.adm-btn-add:hover { background: #DBEAFE; }
+.adm-btn-secondary { background: #F1F5F9; color: #475569; border: 1px solid #E2E8F0; padding: 8px 14px; border-radius: 9px; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; transition: all 0.2s; }
+.adm-btn-secondary:hover { background: #E2E8F0; }
 
 /* ── Product table ── */
 .adm-prod-cell { display: flex; align-items: center; gap: 12px; }
@@ -770,6 +776,182 @@ html.dark select:-webkit-autofill:focus {
   color: #64748B;
   font-weight: 600;
   font-size: 0.78rem;
+}
+
+/* ── Admin Dark Mode Overrides ── */
+html.dark select option {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+html.dark .adm-section-title,
+html.dark .adm-sub-title {
+  color: #f8fafc;
+}
+html.dark .adm-section-sub {
+  color: #94a3b8;
+}
+html.dark .adm-modal {
+  background: #0f172a;
+  color: #f8fafc;
+  border: 1px solid #1e293b;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+html.dark .adm-modal-head h3 {
+  color: #f8fafc;
+}
+html.dark .adm-modal-close {
+  background: #1e293b;
+  color: #94a3b8;
+}
+html.dark .adm-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+html.dark .adm-modal-footer {
+  border-top-color: #1e293b;
+}
+html.dark .adm-form label {
+  color: #cbd5e1;
+}
+html.dark .adm-input {
+  color: #f8fafc;
+  background: #1e293b;
+  border-color: #334155;
+}
+html.dark .adm-input::placeholder {
+  color: #64748b;
+}
+html.dark .adm-input:focus {
+  border-color: #a855f7;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.2);
+}
+html.dark .adm-check-row {
+  color: #cbd5e1;
+}
+html.dark .adm-img-preview,
+html.dark .adm-image-preview {
+  border-color: #334155;
+}
+html.dark .adm-mode-tab {
+  border-color: #334155;
+  background: #1e293b;
+  color: #94a3b8;
+}
+html.dark .adm-mode-tab:hover {
+  border-color: #475569;
+  background: #334155;
+  color: #f8fafc;
+}
+html.dark .adm-mode-tab.active {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+html.dark .adm-file-label {
+  border-color: #334155;
+  background: #1e293b;
+}
+html.dark .adm-file-label:hover {
+  border-color: #a855f7;
+  background: rgba(168, 85, 247, 0.1);
+}
+html.dark .adm-file-text {
+  color: #f8fafc;
+}
+html.dark .adm-file-hint {
+  color: #64748b;
+}
+html.dark .adm-btn-ghost {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+html.dark .adm-btn-ghost:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+html.dark .adm-btn-add {
+  background: #1e3a8a;
+  color: #93c5fd;
+  border-color: #1e40af;
+}
+html.dark .adm-btn-add:hover {
+  background: #1d4ed8;
+}
+html.dark .adm-btn-secondary {
+  background: #1e293b;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+html.dark .adm-btn-secondary:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+html.dark .adm-btn-edit {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+html.dark .adm-btn-edit:hover {
+  background: #1d4ed8;
+}
+html.dark .adm-btn-del {
+  background: #451a1a;
+  color: #fca5a5;
+}
+html.dark .adm-btn-del:hover {
+  background: #7f1d1d;
+}
+html.dark .adm-btn-toggle {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+html.dark .adm-btn-toggle:hover {
+  background: #047857;
+}
+html.dark .adm-btn-promote {
+  background: #3b0764;
+  color: #d8b4fe;
+}
+html.dark .adm-btn-promote:hover {
+  background: #581c87;
+}
+html.dark .adm-btn-demote {
+  background: #431407;
+  color: #fdba74;
+}
+html.dark .adm-btn-demote:hover {
+  background: #7c2d12;
+}
+html.dark .adm-confirm-message {
+  color: #cbd5e1;
+}
+html.dark .adm-prod-title {
+  color: #f8fafc;
+}
+html.dark .adm-prod-thumb {
+  border-color: #334155;
+}
+html.dark .adm-featured-tag {
+  background: #451a03;
+  color: #fcd34d;
+}
+html.dark .adm-cat-tag {
+  background: #3b0764;
+  color: #d8b4fe;
+}
+html.dark .adm-count-badge {
+  background: #1e3a8a;
+  color: #93c5fd;
+}
+html.dark .adm-detail-row {
+  border-bottom-color: #1e293b;
+}
+html.dark .adm-detail-row span:first-child {
+  color: #94a3b8;
+}
+html.dark .adm-toggle-slider {
+  background: #475569;
 }
 
 /* ── Responsive ── */

@@ -629,7 +629,7 @@ export const SlidersView = () => {
                     <button
                       key={option.value}
                       type="button"
-                      className={`rounded-lg border px-3 py-2 text-sm text-left transition ${ctaDestination === option.value ? 'border-brand-purple bg-brand-purple/10 text-brand-purple' : 'border-border bg-white text-ink hover:bg-gray-50'}`}
+                      className={`rounded-lg border px-3 py-2 text-sm text-left transition cursor-pointer ${ctaDestination === option.value ? 'border-brand-purple bg-brand-purple/10 text-brand-purple dark:text-purple-300 dark:bg-purple-950/40' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-700'}`}
                       onClick={() => setCtaDestination(option.value)}
                     >
                       {option.label}
@@ -647,26 +647,26 @@ export const SlidersView = () => {
                         onChange={(e) => setCategorySearch(e.target.value)}
                         placeholder="Search categories"
                       />
-                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                      <div className="max-h-48 overflow-auto rounded-card border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
                         {filteredCategories.length > 0 ? filteredCategories.map((cat) => (
                           <button
                             key={cat._id}
                             type="button"
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${selectedCategoryId === cat._id ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm cursor-pointer ${selectedCategoryId === cat._id ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300 dark:bg-purple-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-900 dark:text-white'}`}
                             onClick={() => setSelectedCategoryId(cat._id)}
                           >
                             <span>{cat.name}</span>
-                            <span className="text-xs text-ink-muted">{cat.productCount || 0}</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">{cat.productCount || 0}</span>
                           </button>
                         )) : (
-                          <div className="py-3 text-sm text-ink-muted">No categories found.</div>
+                          <div className="py-3 text-sm text-slate-400 dark:text-slate-500">No categories found.</div>
                         )}
                       </div>
                       {selectedCategory && (
-                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                        <div className="rounded-card border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 text-sm text-slate-900 dark:text-white">
                           <div className="font-semibold">Preview</div>
                           <div className="mt-1">{selectedCategory.name}</div>
-                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/category/${encodeURIComponent(selectedCategory.name)}`}</div>
+                          <div className="mt-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white">{`/category/${encodeURIComponent(selectedCategory.name)}`}</div>
                           <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/category/${encodeURIComponent(selectedCategory.name)}`)}>
                             <Copy size={14} /> Copy CTA Link
                           </button>
@@ -683,26 +683,26 @@ export const SlidersView = () => {
                         onChange={(e) => setSubcategorySearch(e.target.value)}
                         placeholder="Search subcategories"
                       />
-                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                      <div className="max-h-48 overflow-auto rounded-card border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
                         {subcategoryOptions.length > 0 ? subcategoryOptions.map((sub) => (
                           <button
                             key={`${sub.parentName}-${sub.name}`}
                             type="button"
-                            className={`flex w-full flex-col items-start rounded-lg px-3 py-2 text-left text-sm ${selectedSubcategory === sub.name ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            className={`flex w-full flex-col items-start rounded-lg px-3 py-2 text-left text-sm cursor-pointer ${selectedSubcategory === sub.name ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300 dark:bg-purple-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-900 dark:text-white'}`}
                             onClick={() => setSelectedSubcategory(sub.name)}
                           >
                             <span className="font-medium">{sub.name}</span>
-                            <span className="mt-0.5 text-xs text-ink-muted">{sub.parentName}</span>
+                            <span className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{sub.parentName}</span>
                           </button>
                         )) : (
-                          <div className="py-3 text-sm text-ink-muted">No subcategories found.</div>
+                          <div className="py-3 text-sm text-slate-400 dark:text-slate-500">No subcategories found.</div>
                         )}
                       </div>
                       {selectedSubcategory && (
-                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                        <div className="rounded-card border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 text-sm text-slate-900 dark:text-white">
                           <div className="font-semibold">Preview</div>
                           <div className="mt-1">{selectedSubcategory}</div>
-                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/category/${encodeURIComponent(selectedCategory?.name || '')}/${encodeURIComponent(selectedSubcategory)}`}</div>
+                          <div className="mt-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white">{`/category/${encodeURIComponent(selectedCategory?.name || '')}/${encodeURIComponent(selectedSubcategory)}`}</div>
                           <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/category/${encodeURIComponent(selectedCategory?.name || '')}/${encodeURIComponent(selectedSubcategory)}`)}>
                             <Copy size={14} /> Copy CTA Link
                           </button>
@@ -719,30 +719,30 @@ export const SlidersView = () => {
                         onChange={(e) => setProductSearch(e.target.value)}
                         placeholder="Search products"
                       />
-                      <div className="max-h-48 overflow-auto rounded-card border border-border bg-white p-2">
+                      <div className="max-h-48 overflow-auto rounded-card border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2">
                         {filteredProducts.length > 0 ? filteredProducts.map((prod) => (
                           <button
                             key={prod._id}
                             type="button"
-                            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left ${selectedProductId === prod._id ? 'bg-brand-purple/10 text-brand-purple' : 'hover:bg-gray-50'}`}
+                            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left cursor-pointer ${selectedProductId === prod._id ? 'bg-brand-purple/10 text-brand-purple dark:text-purple-300 dark:bg-purple-950/40' : 'hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-900 dark:text-white'}`}
                             onClick={() => setSelectedProductId(prod._id)}
                           >
-                            <img src={prod.image} alt={prod.name} className="h-10 w-10 rounded-md object-cover" />
+                            <img src={prod.image} alt={prod.name} className="h-10 w-10 rounded-md object-cover border border-slate-200 dark:border-slate-700" />
                             <div className="min-w-0 flex-1">
                               <div className="text-sm font-medium truncate">{prod.name}</div>
-                              <div className="mt-0.5 text-xs text-ink-muted truncate">{prod.categoryName}</div>
+                              <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500 truncate">{prod.categoryName}</div>
                             </div>
-                            <span className="text-xs text-ink-muted">₹{prod.price}</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500 font-bold">₹{prod.price}</span>
                           </button>
                         )) : (
-                          <div className="py-3 text-sm text-ink-muted">No products found.</div>
+                          <div className="py-3 text-sm text-slate-400 dark:text-slate-500">No products found.</div>
                         )}
                       </div>
                       {selectedProduct && (
-                        <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                        <div className="rounded-card border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 text-sm text-slate-900 dark:text-white">
                           <div className="font-semibold">Preview</div>
                           <div className="mt-1">{selectedProduct.name}</div>
-                          <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{`/product/${selectedProduct._id}`}</div>
+                          <div className="mt-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white">{`/product/${selectedProduct._id}`}</div>
                           <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(`/product/${selectedProduct._id}`)}>
                             <Copy size={14} /> Copy CTA Link
                           </button>
@@ -759,9 +759,9 @@ export const SlidersView = () => {
                         onChange={(e) => setCustomCtaUrl(e.target.value)}
                         placeholder="/contact or /about"
                       />
-                      <div className="rounded-card border border-border bg-gray-50 p-3 text-sm">
+                      <div className="rounded-card border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 text-sm text-slate-900 dark:text-white">
                         <div className="font-semibold">Preview</div>
-                        <div className="mt-1 rounded-lg bg-white px-3 py-2 text-sm text-ink">{customCtaUrl || form.ctaLink}</div>
+                        <div className="mt-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm text-slate-900 dark:text-white">{customCtaUrl || form.ctaLink}</div>
                         <button type="button" className="adm-btn-secondary mt-3 inline-flex items-center gap-2" onClick={() => copyToClipboard(customCtaUrl || form.ctaLink)}>
                           <Copy size={14} /> Copy CTA Link
                         </button>

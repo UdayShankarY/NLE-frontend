@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Crown, User as UserIcon } from 'lucide-react';
+import { Crown, User as UserIcon, Trash2 } from 'lucide-react';
 import { LoadingState, EmptyState } from '../EmptyState';
+import { ConfirmModal } from './ConfirmModal';
 import { cn } from '../../lib/utils';
 import { getApiUrl } from '../../lib/api';
+import { trackAdminAction } from '../../lib/analytics';
 import { toast } from 'react-toastify';
 
 interface User {
@@ -20,6 +22,7 @@ export const UsersView = () => {
   const [filter, setFilter] = useState<'all' | 'user' | 'admin'>('all');
   const [selectedRoles, setSelectedRoles] = useState<Record<string, 'user' | 'admin'>>({});
   const [savingUserId, setSavingUserId] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -62,11 +65,37 @@ export const UsersView = () => {
         delete next[userId];
         return next;
       });
+      trackAdminAction('change_user_role', 'user', userId);
       toast.success(`User role updated to ${updated.role.toUpperCase()}`);
     } catch (err: any) {
       toast.error(err.message || 'Unable to update user role');
     } finally {
       setSavingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(getApiUrl(`/api/dashboard/users/${userId}`), {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload.error || 'Failed to delete user');
+      }
+
+      setUsers((prev) => prev.filter((u) => u._id !== userId));
+      trackAdminAction('delete_user', 'user', userId);
+      toast.success('User deleted successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Unable to delete user');
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -166,6 +195,14 @@ export const UsersView = () => {
                           >
                             {savingUserId === u._id ? 'Saving...' : 'Update'}
                           </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirm({ id: u._id, name: `${u.firstName || 'User'} ${u.lastName || ''}`.trim() })}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                            title="Delete User"
+                          >
+                            <Trash2 size={13} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -219,12 +256,30 @@ export const UsersView = () => {
                     >
                       {savingUserId === u._id ? 'Saving...' : 'Update'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm({ id: u._id, name: `${u.firstName || 'User'} ${u.lastName || ''}`.trim() })}
+                      className="flex h-8 w-8 items-center justify-center rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition-colors cursor-pointer"
+                      title="Delete User"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
                 </div>
               );
             })}
           </div>
         </div>
+      )}
+
+      {deleteConfirm && (
+        <ConfirmModal
+          title="Delete User Account"
+          message={`Are you sure you want to permanently delete user "${deleteConfirm.name}"? This action cannot be undone.`}
+          confirmText="Delete User"
+          onConfirm={() => void handleDeleteUser(deleteConfirm.id)}
+          onCancel={() => setDeleteConfirm(null)}
+        />
       )}
     </div>
   );

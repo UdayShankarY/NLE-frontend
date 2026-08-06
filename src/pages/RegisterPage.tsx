@@ -8,6 +8,7 @@ import { useProducts } from '../hooks/useProducts';
 import { useCart } from '../hooks/useCart';
 import { useAI } from '../context/AIContext';
 import { getApiUrl } from '../lib/api';
+import { trackSignup } from '../lib/analytics';
 import { auth as firebaseAuth } from '../firebase';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
@@ -90,6 +91,7 @@ export default function RegisterPage() {
       }
 
       auth.login(data.user, data.token);
+      trackSignup('email', data.user.id || data.user._id);
       navigate('/profile');
     } catch (err: any) {
       setErrors({ general: err.message || 'Registration failed. Please try again.' });
@@ -116,6 +118,7 @@ export default function RegisterPage() {
       if (!response.ok) throw new Error(data.message || 'Google signup failed');
 
       auth.login(data.user, data.token);
+      trackSignup('google', data.user.id || data.user._id);
       navigate('/profile');
     } catch (err: any) {
       setErrors({ general: err.message || 'Google authentication failed' });

@@ -15,7 +15,7 @@ import ProfilePage from '../pages/ProfilePage';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AdminRoute from '../components/AdminRoute';
 import { ScrollToTop } from '../components/ScrollToTop';
-import { trackPageView, trackSearch, trackViewCategory } from '../lib/analytics';
+import { trackPageView, trackSearch, trackViewItemList } from '../lib/analytics';
 
 function RouteAnalytics() {
   const location = useLocation();
@@ -29,7 +29,8 @@ function RouteAnalytics() {
       const [, categorySegment, subcategorySegment] = categoryMatch;
       const category = decodeURIComponent(categorySegment);
       const subcategory = subcategorySegment ? decodeURIComponent(subcategorySegment) : null;
-      trackViewCategory(subcategory ? `${category}/${subcategory}` : category);
+      const listName = subcategory ? `${category} - ${subcategory}` : category;
+      trackViewItemList(listName);
     }
 
     const search = new URLSearchParams(location.search).get('search')?.trim();

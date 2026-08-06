@@ -169,6 +169,28 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
     setSelectedActivityIds((prev) => prev.includes(activityId) ? prev.filter((id) => id !== activityId) : [...prev, activityId]);
   };
 
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!scrollRef.current) return;
+    isDragging.current = true;
+    startX.current = e.pageX - scrollRef.current.offsetLeft;
+    scrollLeftStart.current = scrollRef.current.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !scrollRef.current) return;
+    const x = e.pageX - scrollRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5;
+    scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDragging.current = false;
+  };
+
   const scrollItems = (direction: 'left' | 'right') => {
     if (!scrollRef.current) return;
     const offset = scrollRef.current.clientWidth * 0.7;
@@ -204,7 +226,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-2 scroll-smooth touch-pan-y [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-2 overflow-x-auto pb-3 pt-2 scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {categories.map((category) => {
           const isActive = category === activeCategory;
           return (
@@ -221,11 +243,11 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
       </div>
 
       <div className="relative overflow-hidden w-full max-w-full">
-        <div className="absolute left-0 top-1/2 z-10 -translate-y-1/2">
+        <div className="hidden sm:flex absolute left-0 top-1/2 z-10 -translate-y-1/2">
           <button
             type="button"
             onClick={() => scrollItems('left')}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white dark:bg-slate-800 text-ink shadow-sm transition hover:bg-gray-100 dark:hover:bg-slate-700"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 text-gray-800 dark:text-slate-200 shadow-md backdrop-blur-sm transition hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
             aria-label="Scroll left"
           >
             <ChevronLeft size={18} />
@@ -234,7 +256,11 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
 
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto overflow-y-hidden w-full max-w-full scroll-smooth pb-4 pl-1 pr-10 touch-pan-y snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUpOrLeave}
+          onMouseLeave={handleMouseUpOrLeave}
+          className="flex gap-3.5 sm:gap-4 overflow-x-auto overflow-y-hidden w-full max-w-full scroll-smooth pb-4 pt-1 pl-1 pr-4 sm:pr-10 snap-x snap-mandatory cursor-grab active:cursor-grabbing select-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {visibleItems.length > 0 ? visibleItems.map((item) => {
             const itemId = getItemId(item);
@@ -244,7 +270,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
             return (
               <div
                 key={itemId}
-                className="flex-none shrink-0 w-[220px] sm:w-[240px] md:w-[250px] snap-start"
+                className="flex-none shrink-0 w-[200px] sm:w-[240px] md:w-[250px] snap-start"
               >
                 <div className="group flex h-[260px] sm:h-[275px] flex-col overflow-hidden rounded-2xl border border-gray-200/80 dark:border-slate-700/60 bg-white dark:bg-slate-800/90 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
                   {/* Image (55-60% height) */}
@@ -253,7 +279,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
                       src={item.image || 'https://via.placeholder.com/560x560?text=No+image'}
                       alt={getItemTitle(item)}
                       loading="lazy"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105 select-none pointer-events-none"
                     />
                   </div>
                   {/* Content (compact, zero empty gaps) */}
@@ -277,7 +303,7 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
                       <button
                         type="button"
                         onClick={() => activeTab === 'addons' ? toggleAddon(itemId) : toggleActivity(itemId)}
-                        className={`h-8 rounded-full px-4 text-xs font-bold transition-all active:scale-95 shadow-xs ${selected ? 'bg-brand-purple text-white' : 'border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:border-brand-purple hover:text-brand-purple'}`}
+                        className={`h-8 rounded-full px-4 text-xs font-bold transition-all active:scale-95 shadow-xs cursor-pointer ${selected ? 'bg-brand-purple text-white' : 'border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:border-brand-purple hover:text-brand-purple'}`}
                       >
                         {selected ? 'Remove' : 'Add'}
                       </button>
@@ -293,11 +319,11 @@ export const GlobalAddonsActivitiesModule: React.FC<Props> = ({ onSelectionChang
           )}
         </div>
 
-        <div className="absolute right-0 top-1/2 z-10 -translate-y-1/2">
+        <div className="hidden sm:flex absolute right-0 top-1/2 z-10 -translate-y-1/2">
           <button
             type="button"
             onClick={() => scrollItems('right')}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-ink shadow-sm transition hover:bg-gray-100"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/90 text-gray-800 dark:text-slate-200 shadow-md backdrop-blur-sm transition hover:bg-gray-100 dark:hover:bg-slate-700 cursor-pointer"
             aria-label="Scroll right"
           >
             <ChevronRight size={18} />

@@ -244,6 +244,7 @@ export interface AdminCategory {
   image?: string
   slug: string
   active: boolean 
+  order?: number
   productCount?: number
   subcategories?: (string | Subcategory)[]
 }
@@ -264,7 +265,7 @@ export interface AdminProduct {
   image: string;
   moreImages: string[];
   badge?: string;
-  badgeColor: 'purple' | 'pink' | 'gold' | 'green';
+  badgeColor: string;
   rating: number;
   reviewCount: number;
   active: boolean;

@@ -54,7 +54,7 @@ export default function BookingRoutePage() {
 
   useEffect(() => {
     if (product) {
-      trackBookingStarted();
+      trackBookingStarted(product._id, product.name, product.price);
     }
   }, [product]);
 

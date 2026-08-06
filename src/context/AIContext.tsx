@@ -7,6 +7,7 @@ import {
 } from "react";
 import { chatWithAI } from "../services/ai.service";
 import type { AssistantMessage } from "../components/AssistantPanel";
+import { trackAssistantQuestion } from "../lib/analytics";
 
 interface AIContextType {
   messages: AssistantMessage[];
@@ -53,6 +54,7 @@ export const AIProvider = ({ children }: { children: ReactNode }) => {
     setMessages((prev) => [...prev, userMessage]);
 
     const question = input;
+    trackAssistantQuestion(question);
 
     setInput("");
 

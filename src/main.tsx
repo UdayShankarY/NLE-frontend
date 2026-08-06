@@ -7,6 +7,7 @@ import { ThemeProvider } from './context/ThemeContext';
 
 import './index.css';
 import AppRoutes from './routes/AppRoutes';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 import { initGA } from "./lib/analytics";
 
@@ -38,14 +39,16 @@ mo.observe(document.body, {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <AIProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </AIProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <AIProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </AIProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

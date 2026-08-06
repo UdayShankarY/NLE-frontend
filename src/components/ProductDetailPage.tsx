@@ -5,7 +5,7 @@ import type { AdminProduct, BookingAddonSnapshot } from '../types';
 import { cn } from '../lib/utils';
 import { BackButton } from './BackButton';
 import { ShareDialog } from './shared/ShareDialog';
-import { trackBookingStarted, trackWhatsappClick } from '../lib/analytics';
+import { trackBookingStarted, trackWhatsappClick, trackWishlistToggle, trackShare } from '../lib/analytics';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import { useProducts } from '../hooks/useProducts';
@@ -38,12 +38,7 @@ const WA_SVG = (
   </svg>
 );
 
-const badgeColorClass: Record<string, string> = {
-  purple: 'bg-brand-purple text-white',
-  gold: 'bg-amber-400 text-white',
-  green: 'bg-emerald-500 text-white',
-  red: 'bg-red-500 text-white',
-};
+import { getBadgeColorClass } from '../lib/badges';
 
 export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) => {
   const { t } = useLanguage();
@@ -154,6 +149,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
       e.stopPropagation();
       e.preventDefault();
     }
+    trackShare('share_button', 'product', product._id);
     const shareUrl = `${window.location.origin}/share/product/${product._id}`;
     if (navigator.share) {
       try {
@@ -173,6 +169,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
     }
     const next = !isWished;
     setLocalWished(next);
+    trackWishlistToggle(next ? 'add' : 'remove', product._id, product.name);
     toggleWishlist(product, next).then((success) => {
       if (!success) setLocalWished(!next);
     });
@@ -264,7 +261,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             </div>
 
             {product.badge && (
-              <span className={cn('absolute left-3.5 top-3.5 z-10 rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider shadow-xs', badgeColorClass[product.badgeColor || 'purple'])}>
+              <span className={cn('absolute left-3.5 top-3.5 z-10 rounded-full px-3 py-1 text-xs font-extrabold uppercase tracking-wider shadow-xs', getBadgeColorClass(product.badgeColor))}>
                 {product.badge}
               </span>
             )}
@@ -377,7 +374,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             <button
               type="button"
               onClick={() => {
-                trackBookingStarted();
+                trackBookingStarted(product._id, product.name, product.price);
                 onBook(product, 'razorpay', bookingSelections);
               }}
               className="w-full h-14 sm:h-[54px] inline-flex items-center justify-center rounded-2xl bg-brand-purple hover:bg-brand-purple-dark text-white font-bold text-base shadow-lg shadow-purple-600/25 transition-all duration-200 active:scale-[0.98] cursor-pointer"
@@ -389,7 +386,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
             <button
               type="button"
               onClick={() => {
-                trackWhatsappClick();
+                trackWhatsappClick('product_detail_desktop', product._id, product.name);
                 setTimeout(() => onBook(product, "whatsapp", bookingSelections), 400);
               }}
               className="w-full h-14 sm:h-[54px] inline-flex items-center justify-center gap-2.5 rounded-2xl bg-white dark:bg-slate-900 border-2 border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-bold text-base transition-all duration-200 active:scale-[0.98] cursor-pointer"
@@ -586,7 +583,7 @@ export const ProductDetailPage: React.FC<Props> = ({ product, onBack, onBook }) 
         <button
           type="button"
           onClick={() => {
-            trackWhatsappClick();
+            trackWhatsappClick('product_detail_mobile', product._id, product.name);
             setTimeout(() => onBook(product, "whatsapp", bookingSelections), 400);
           }}
           className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/25 active:scale-95 transition-all inline-flex items-center gap-2 cursor-pointer"

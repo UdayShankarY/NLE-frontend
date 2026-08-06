@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AuthTab, AuthUser } from '../types';
 import { getApiUrl } from '../lib/api';
+import { setGAUser, trackEvent } from '../lib/analytics';
 
 const ADMIN_EMAIL = 'admin@nextlevelevents.com';
 
@@ -189,6 +190,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     localStorage.setItem('user', JSON.stringify(normalizedUser));
+    const userId = normalizedUser.id || (normalizedUser as any)._id || normalizedUser.email;
+    setGAUser(String(userId), { user_role: normalizedUser.role });
 
     setState((prev) => ({
       ...prev,
@@ -206,6 +209,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    setGAUser(null);
+    trackEvent('logout');
     setState((prev) => ({
       ...prev,
       user: null,

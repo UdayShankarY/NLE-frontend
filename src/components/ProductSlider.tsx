@@ -5,13 +5,8 @@ import { cn } from '../lib/utils';
 import { useLanguage } from '../hooks/useLanguage';
 import { useAuth } from '../hooks/useAuth';
 import { getApiUrl } from '../lib/api';
-
-const badgePalette: Record<string, string> = {
-  purple: 'bg-brand-purple text-white',
-  gold:   'bg-amber-400 text-white',
-  green:  'bg-emerald-500 text-white',
-  red:    'bg-brand-rose text-white',
-};
+import { getBadgeColorClass } from '../lib/badges';
+import { trackSelectItem } from '../lib/analytics';
 
 /* ─────────────────────────────────────────────────── */
 /*  ProductCard                                        */
@@ -36,6 +31,17 @@ export const ProductCard: React.FC<{
       ? Math.round((1 - product.price / product.originalPrice) * 100)
       : 0;
 
+  const handleCardClick = () => {
+    trackSelectItem({
+      item_id: product._id,
+      item_name: product.name,
+      item_category: product.categoryName,
+      item_subcategory: product.subcategory,
+      price: product.price,
+    }, product.categoryName);
+    onViewDetails(product);
+  };
+
   return (
     <div
       data-card
@@ -47,7 +53,7 @@ export const ProductCard: React.FC<{
           ? 'w-[min(78vw,260px)] min-w-[200px] max-w-[280px] flex-shrink-0 snap-start sm:w-[240px]'
           : 'w-full h-full'
       )}
-      onClick={() => onViewDetails(product)}
+      onClick={handleCardClick}
     >
       {/* Image */}
       <div className="relative h-[180px] w-full overflow-hidden bg-gray-100 dark:bg-slate-900 sm:h-[210px]">
@@ -66,7 +72,7 @@ export const ProductCard: React.FC<{
           <span
             className={cn(
               'absolute left-2.5 top-2.5 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide shadow-xs',
-              badgePalette[product.badgeColor || 'purple']
+              getBadgeColorClass(product.badgeColor)
             )}
           >
             {product.badge}
@@ -297,13 +303,7 @@ export const ProductSlider: React.FC<ProductSliderProps> = ({
           ))}
         </div>
 
-        {/* Right fade gradient on mobile (dark mode aware to eliminate white artifacts) */}
-        {isLanding && (
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-14 bg-gradient-to-l from-white dark:from-slate-900 to-transparent sm:hidden"
-            aria-hidden="true"
-          />
-        )}
+
 
         {/* Right arrow */}
         {isLanding && (

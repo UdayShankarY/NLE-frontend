@@ -6,6 +6,8 @@ import { toast } from "react-toastify";
 import { Pencil, Eye, EyeOff, Trash2, Upload, Link as LinkIcon, X, Star, Lightbulb, Copy } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { getApiUrl } from '../../lib/api';
+import { BADGE_COLORS, getAdminBadgeColorClass } from '../../lib/badges';
+import { trackAdminAction } from '../../lib/analytics';
 
 const API = getApiUrl('/api/products');
 const CAT_API = getApiUrl('/api/categories');
@@ -36,7 +38,7 @@ export const ProductsView = () => {
     image: "",
     moreImages: [] as string[],
     badge: "",
-    badgeColor: "purple" as "purple" | "pink" | "gold" | "green",
+    badgeColor: "purple" as string,
     active: true,
     featured: false,
   });
@@ -307,6 +309,7 @@ export const ProductsView = () => {
         });
         const updated = await res.json();
         setProducts((prev) => prev.map((p) => (p._id === updated._id ? updated : p)));
+        trackAdminAction('update_product', 'product', updated._id);
         toast.success("Product updated successfully!");
       } catch {
         toast.error("Failed to update product");
@@ -319,6 +322,7 @@ export const ProductsView = () => {
       });
       const newProduct = await res.json();
       setProducts((prev) => [newProduct, ...prev]);
+      trackAdminAction('create_product', 'product', newProduct._id);
       toast.success("Product added successfully!");
     }
 
@@ -329,6 +333,7 @@ export const ProductsView = () => {
     await fetch(`${API}/${id}`, { method: "DELETE" });
     setProducts((prev) => prev.filter((p) => p._id !== id));
     setDeleteConfirm(null);
+    trackAdminAction('delete_product', 'product', id);
     toast.success("Product deleted!");
   };
 
@@ -417,13 +422,6 @@ export const ProductsView = () => {
     }
   };
 
-  const badgeColorClass: Record<string, string> = {
-    purple: 'bg-brand-purple text-white',
-    pink: 'bg-brand-pink text-white',
-    gold: 'bg-brand-gold text-white',
-    green: 'bg-emerald-500 text-white',
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
@@ -447,7 +445,7 @@ export const ProductsView = () => {
               <div className="relative aspect-video w-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                 <img src={prod.image} alt={prod.name} className="h-full w-full object-cover" />
                 {prod.badge && (
-                  <span className={cn('absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border', badgeColorClass[prod.badgeColor] || badgeColorClass.purple)}>
+                  <span className={cn('absolute left-2.5 top-2.5 rounded-full px-2.5 py-0.5 text-[10px] font-extrabold uppercase border', getAdminBadgeColorClass(prod.badgeColor))}>
                     {prod.badge}
                   </span>
                 )}
@@ -747,7 +745,7 @@ export const ProductsView = () => {
             {form.moreImages.length > 0 && (
               <div className="mt-2 grid grid-cols-4 gap-2 sm:grid-cols-6">
                 {form.moreImages.map((img, idx) => (
-                  <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-border">
+                  <div key={idx} className="group relative aspect-square overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
                     <img src={img} alt={`More ${idx + 1}`} className="h-full w-full object-cover" />
                     <button
                       type="button"
@@ -783,9 +781,9 @@ export const ProductsView = () => {
             {form.inclusions.length > 0 && (
               <ul className="mt-2 flex flex-col gap-1.5">
                 {form.inclusions.map((inc, idx) => (
-                  <li key={idx} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-ink">
+                  <li key={idx} className="flex items-center justify-between rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 text-sm text-slate-900 dark:text-white">
                     {inc}
-                    <button type="button" className="text-ink-muted hover:text-red-500" onClick={() => removeInclusion(idx)}>
+                    <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400" onClick={() => removeInclusion(idx)}>
                       <X size={13} />
                     </button>
                   </li>
@@ -793,82 +791,7 @@ export const ProductsView = () => {
               </ul>
             )}
 
-            <label>Attach existing active add-ons</label>
-            <div className="mb-3 flex flex-col gap-2 sm:flex-row">
-              <input
-                className="adm-input"
-                value={addonSearch}
-                onChange={(e) => setAddonSearch(e.target.value)}
-                placeholder="Search add-ons"
-              />
-              <button
-                type="button"
-                className="adm-btn-ghost"
-                onClick={() => setSelectedAddonIds([])}
-              >
-                Clear selected
-              </button>
-            </div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {filteredAvailableAddons.map((addon) => {
-                const checked = selectedAddonIds.includes(addon._id);
-                return (
-                  <label key={addon._id} className="flex items-center gap-2 rounded-lg border border-border bg-gray-50 px-3 py-2 text-sm text-ink">
-                    <input
-                      type="checkbox"
-                      checked={checked}
-                      onChange={(e) => {
-                        const next = e.target.checked
-                          ? [...selectedAddonIds, addon._id]
-                          : selectedAddonIds.filter((id) => id !== addon._id);
-                        setSelectedAddonIds(next);
-                      }}
-                    />
-                    <span className="flex-1">{addon.name}</span>
-                    <span className="font-semibold text-brand-purple">₹{addon.price.toLocaleString()}</span>
-                  </label>
-                );
-              })}
-            </div>
-            {filteredAvailableAddons.length === 0 && (
-              <div className="mt-2 rounded-lg border border-dashed border-border bg-gray-50 px-3 py-4 text-sm text-ink-muted">
-                No add-ons match “{addonSearch}”.
-              </div>
-            )}
 
-            <label className="mt-3">Quick add-ons (legacy inline)</label>
-            <div className="flex gap-2">
-              <input
-                className="adm-input"
-                value={newAddOn.name}
-                onChange={(e) => setNewAddOn((a) => ({ ...a, name: e.target.value }))}
-                placeholder="Add-on name"
-              />
-              <input
-                type="number"
-                className="adm-input"
-                style={{ maxWidth: 100 }}
-                value={newAddOn.price}
-                onChange={(e) => setNewAddOn((a) => ({ ...a, price: Number(e.target.value) }))}
-                placeholder="Price"
-                min="0"
-              />
-              <button type="button" className="adm-btn-add" onClick={addAddOn}>
-                + Add
-              </button>
-            </div>
-            {form.addOns.length > 0 && (
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {form.addOns.map((addon, idx) => (
-                  <li key={idx} className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-1.5 text-sm text-ink">
-                    {addon.name} - &#8377;{addon.price}
-                    <button type="button" className="text-ink-muted hover:text-red-500" onClick={() => removeAddOn(idx)}>
-                      <X size={13} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
 
             <div className="adm-form-row">
               <div className="adm-form-col">
@@ -889,14 +812,13 @@ export const ProductsView = () => {
                   onChange={(e) =>
                     setForm((f) => ({
                       ...f,
-                      badgeColor: e.target.value as "purple" | "pink" | "gold" | "green",
+                      badgeColor: e.target.value,
                     }))
                   }
                 >
-                  <option value="purple">Purple</option>
-                  <option value="pink">Pink</option>
-                  <option value="gold">Gold</option>
-                  <option value="green">Green</option>
+                  {BADGE_COLORS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -965,8 +887,8 @@ export const ProductsView = () => {
                 }
               }}
             />
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-ink-muted">
-              <Lightbulb size={13} className="mt-0.5 flex-shrink-0 text-brand-purple" />
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+              <Lightbulb size={13} className="mt-0.5 flex-shrink-0 text-brand-purple dark:text-purple-400" />
               Quick add: Category will be created with default settings. You can edit it later from the Categories page.
             </p>
             <div className="adm-modal-footer">

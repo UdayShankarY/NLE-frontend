@@ -121,12 +121,13 @@ export default function ProductPage() {
 
   useEffect(() => {
     if (resolvedProduct) {
-      trackViewItem(
-        resolvedProduct._id,
-        resolvedProduct.name,
-        resolvedProduct.categoryName,
-        resolvedProduct.price
-      );
+      trackViewItem({
+        item_id: resolvedProduct._id,
+        item_name: resolvedProduct.name,
+        item_category: resolvedProduct.categoryName,
+        item_subcategory: resolvedProduct.subcategory,
+        price: resolvedProduct.price,
+      });
     }
   }, [resolvedProduct]);
 

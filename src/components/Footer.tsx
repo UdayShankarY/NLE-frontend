@@ -53,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({ t, onPageOpen, categories = [], 
             <div className="mb-6 flex flex-col gap-2.5">
               <a
                 href="tel:+917022058460"
-                onClick={() => trackContactClick()}
+                onClick={() => trackContactClick('phone', 'footer')}
                 className="flex items-center gap-2.5 text-sm text-slate-400 transition-colors hover:text-white"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-white/20">
@@ -63,7 +63,7 @@ export const Footer: React.FC<FooterProps> = ({ t, onPageOpen, categories = [], 
               </a>
               <a
                 href="mailto:thedecorparty.team@gmail.com"
-                onClick={() => trackContactClick()}
+                onClick={() => trackContactClick('email', 'footer')}
                 className="flex items-center gap-2.5 text-sm text-slate-400 transition-colors hover:text-white"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-colors hover:bg-white/20">
@@ -95,7 +95,7 @@ export const Footer: React.FC<FooterProps> = ({ t, onPageOpen, categories = [], 
                 target="_blank"
                 rel="noreferrer"
                 aria-label="WhatsApp"
-                onClick={() => trackWhatsappClick()}
+                onClick={() => trackWhatsappClick('footer')}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-slate-300 transition-all duration-200 hover:bg-emerald-500 hover:text-white hover:scale-110"
               >
                 <WhatsAppIcon />

@@ -259,6 +259,7 @@ const LoginForm: React.FC<{
         return;
       }
 
+      trackLogin('google', data.user.id);
       onSuccess({
         id: data.user.id,
         firstName: data.user.firstName,
